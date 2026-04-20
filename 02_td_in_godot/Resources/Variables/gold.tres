@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="IntVariable" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/ReactiveSO/Runtime/Variables/IntVariable.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Events/on_gold_changed.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+_initialValue = 200
+_value = 200
+_onValueChanged = ExtResource("2")

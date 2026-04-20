@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TowerConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/TowerConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Ice Tower"
+Cost = 75
+Range = 7.0
+FireRate = 1.0
+Damage = 10
+ProjectileSpeed = 20.0
+AreaDamageRadius = 0.0
+SlowAmount = 0.5
+SlowDuration = 2.0
+Color = Color(0.3, 0.7, 0.9, 1)

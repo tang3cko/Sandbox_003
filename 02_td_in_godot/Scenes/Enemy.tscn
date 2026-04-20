@@ -1,0 +1,14 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/Enemy.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/RuntimeSets/active_enemies.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_killed.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_reached_end.tres" id="4"]
+[ext_resource type="Resource" path="res://Resources/Events/on_gold_earned.tres" id="5"]
+
+[node name="Enemy" type="Node3D"]
+script = ExtResource("1")
+_activeEnemies = ExtResource("2")
+_onEnemyKilled = ExtResource("3")
+_onEnemyReachedEnd = ExtResource("4")
+_onGoldEarned = ExtResource("5")

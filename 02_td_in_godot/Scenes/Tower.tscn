@@ -1,0 +1,10 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Towers/Tower.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/RuntimeSets/active_enemies.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/RuntimeSets/placed_towers.tres" id="3"]
+
+[node name="Tower" type="Node3D"]
+script = ExtResource("1")
+_activeEnemies = ExtResource("2")
+_placedTowers = ExtResource("3")

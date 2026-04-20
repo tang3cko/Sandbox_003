@@ -1,0 +1,96 @@
+[gd_scene load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/GameManager.cs" id="1"]
+[ext_resource type="Script" path="res://Scripts/Core/WaveManager.cs" id="2"]
+[ext_resource type="Script" path="res://Scripts/Towers/TowerPlacement.cs" id="3"]
+[ext_resource type="Script" path="res://Scripts/UI/HUD.cs" id="4"]
+[ext_resource type="Script" path="res://Scripts/Core/MainSetup.cs" id="5"]
+[ext_resource type="Resource" path="res://Resources/game_config.tres" id="6"]
+[ext_resource type="Resource" path="res://Resources/Variables/gold.tres" id="7"]
+[ext_resource type="Resource" path="res://Resources/Variables/lives.tres" id="8"]
+[ext_resource type="Resource" path="res://Resources/Variables/score.tres" id="9"]
+[ext_resource type="Resource" path="res://Resources/Variables/wave_number.tres" id="10"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_killed.tres" id="11"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_reached_end.tres" id="12"]
+[ext_resource type="Resource" path="res://Resources/Events/on_gold_changed.tres" id="13"]
+[ext_resource type="Resource" path="res://Resources/Events/on_game_over.tres" id="14"]
+[ext_resource type="Resource" path="res://Resources/Events/on_wave_completed.tres" id="15"]
+[ext_resource type="Resource" path="res://Resources/RuntimeSets/active_enemies.tres" id="16"]
+[ext_resource type="Resource" path="res://Resources/RuntimeSets/placed_towers.tres" id="17"]
+[ext_resource type="Resource" path="res://Resources/Events/on_tower_placed.tres" id="18"]
+[ext_resource type="Resource" path="res://Resources/Events/on_gold_earned.tres" id="19"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1"]
+size = Vector2(40, 40)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+albedo_color = Color(0.3, 0.5, 0.3, 1)
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.4, 0.6, 0.8, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.3, 0.4, 1)
+ambient_light_energy = 0.5
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1")
+Config = ExtResource("6")
+_gold = ExtResource("7")
+_lives = ExtResource("8")
+_score = ExtResource("9")
+_waveNumber = ExtResource("10")
+_onEnemyKilled = ExtResource("11")
+_onEnemyReachedEnd = ExtResource("12")
+_onGoldEarned = ExtResource("19")
+_onGameOver = ExtResource("14")
+_onWaveCompleted = ExtResource("15")
+_activeEnemies = ExtResource("16")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 25, 15)
+fov = 45.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="Towers" type="Node3D" parent="."]
+
+[node name="WaveManager" type="Node3D" parent="."]
+script = ExtResource("2")
+Waypoints = PackedVector3Array(-15, 0, -15, -15, 0, 0, 0, 0, 0, 0, 0, 10, 10, 0, 10, 10, 0, -5, 15, 0, -5, 15, 0, 15)
+
+[node name="TowerPlacement" type="Node3D" parent="."]
+script = ExtResource("3")
+_placedTowers = ExtResource("17")
+_gold = ExtResource("7")
+_onTowerPlaced = ExtResource("18")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4")
+_gold = ExtResource("7")
+_lives = ExtResource("8")
+_waveNumber = ExtResource("10")
+_score = ExtResource("9")
+_onGameOver = ExtResource("14")
+
+[node name="Setup" type="Node3D" parent="."]
+script = ExtResource("5")

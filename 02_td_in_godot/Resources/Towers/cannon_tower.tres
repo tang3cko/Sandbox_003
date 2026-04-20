@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TowerConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/TowerConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Cannon Tower"
+Cost = 100
+Range = 6.0
+FireRate = 0.5
+Damage = 80
+ProjectileSpeed = 15.0
+AreaDamageRadius = 3.0
+SlowAmount = 0.0
+SlowDuration = 0.0
+Color = Color(0.6, 0.3, 0.1, 1)

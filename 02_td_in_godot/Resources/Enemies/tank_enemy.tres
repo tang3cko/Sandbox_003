@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Golem"
+Speed = 1.5
+MaxHealth = 300
+GoldReward = 30
+Damage = 2
+Scale = 1.5
+Color = Color(0.4, 0.4, 0.4, 1)

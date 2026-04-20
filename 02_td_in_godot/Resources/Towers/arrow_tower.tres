@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TowerConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/TowerConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Arrow Tower"
+Cost = 50
+Range = 8.0
+FireRate = 2.0
+Damage = 25
+ProjectileSpeed = 25.0
+AreaDamageRadius = 0.0
+SlowAmount = 0.0
+SlowDuration = 0.0
+Color = Color(0.2, 0.6, 0.2, 1)

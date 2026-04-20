@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Goblin"
+Speed = 3.0
+MaxHealth = 100
+GoldReward = 10
+Damage = 1
+Scale = 1.0
+Color = Color(0.8, 0.2, 0.2, 1)

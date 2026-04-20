@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="GameConfig" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/GameConfig.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_1.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_2.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_3.tres" id="4"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_4.tres" id="5"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_5.tres" id="6"]
+
+[resource]
+script = ExtResource("1")
+StartingGold = 200
+StartingLives = 20
+Waves = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
