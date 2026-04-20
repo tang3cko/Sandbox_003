@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Hazard.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Events/on_hazard_hit.tres" id="2"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(28, 28)
+
+[node name="Hazard" type="Area2D"]
+script = ExtResource("1")
+OnHitPlayer = ExtResource("2")
+collision_layer = 8
+collision_mask = 1
+monitoring = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("shape")

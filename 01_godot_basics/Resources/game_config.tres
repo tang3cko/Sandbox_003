@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="GameConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/GameConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+PlayerSpeed = 400.0
+HazardSpeed = 200.0
+HazardSpawnInterval = 2.0
+StartingLives = 3
+CoinsPerWave = 5
+ArenaWidth = 1800.0
+ArenaHeight = 1000.0
+WallThickness = 40.0

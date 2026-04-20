@@ -1,0 +1,87 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://Scripts/GameManager.cs" id="1"]
+[ext_resource type="Script" path="res://Scripts/Player.cs" id="2"]
+[ext_resource type="Resource" path="res://Resources/game_config.tres" id="3"]
+[ext_resource type="Script" path="res://Scripts/HUD.cs" id="4"]
+[ext_resource type="Resource" path="res://Resources/Events/on_coin_collected.tres" id="5"]
+[ext_resource type="Resource" path="res://Resources/Events/on_hazard_hit.tres" id="6"]
+[ext_resource type="Resource" path="res://Resources/Events/on_score_changed.tres" id="7"]
+[ext_resource type="Resource" path="res://Resources/Events/on_lives_changed.tres" id="8"]
+[ext_resource type="Resource" path="res://Resources/Events/on_wave_cleared.tres" id="9"]
+[ext_resource type="Resource" path="res://Resources/Events/on_game_over.tres" id="10"]
+
+[sub_resource type="RectangleShape2D" id="player_shape"]
+size = Vector2(40, 40)
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1")
+Config = ExtResource("3")
+OnCoinCollected = ExtResource("5")
+OnHazardHit = ExtResource("6")
+OnScoreChanged = ExtResource("7")
+OnLivesChanged = ExtResource("8")
+OnWaveCleared = ExtResource("9")
+OnGameOver = ExtResource("10")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(900, 500)
+script = ExtResource("2")
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("player_shape")
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Hazards" type="Node2D" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = ExtResource("4")
+OnScoreChanged = ExtResource("7")
+OnLivesChanged = ExtResource("8")
+OnWaveCleared = ExtResource("9")
+OnGameOver = ExtResource("10")
+
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 400.0
+offset_bottom = 90.0
+theme_override_font_sizes/font_size = 36
+text = "Score: 0"
+
+[node name="LivesLabel" type="Label" parent="UI"]
+offset_left = 40.0
+offset_top = 100.0
+offset_right = 400.0
+offset_bottom = 150.0
+theme_override_font_sizes/font_size = 36
+text = "Lives: 3"
+
+[node name="WaveLabel" type="Label" parent="UI"]
+offset_left = 40.0
+offset_top = 160.0
+offset_right = 400.0
+offset_bottom = 210.0
+theme_override_font_sizes/font_size = 36
+text = "Wave: 0"
+
+[node name="GameOverLabel" type="Label" parent="UI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -40.0
+offset_right = 200.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 60
+text = "GAME OVER"
+horizontal_alignment = 1
+vertical_alignment = 1
