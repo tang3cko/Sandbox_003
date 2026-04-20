@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="FloatVariable" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/ReactiveSO/Runtime/Variables/FloatVariable.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+_initialValue = 100.0
+_value = 100.0

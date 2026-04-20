@@ -1,0 +1,196 @@
+[gd_scene load_steps=37 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/GameManager.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Player/player_config.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Waves/wave_config.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Weapons/sword.tres" id="4"]
+[ext_resource type="Resource" path="res://Resources/Weapons/projectile.tres" id="5"]
+[ext_resource type="Resource" path="res://Resources/Events/health.tres" id="6"]
+[ext_resource type="Resource" path="res://Resources/Events/stamina.tres" id="7"]
+[ext_resource type="Resource" path="res://Resources/Events/score.tres" id="8"]
+[ext_resource type="Resource" path="res://Resources/Events/wave_number.tres" id="9"]
+[ext_resource type="Resource" path="res://Resources/Events/on_player_died.tres" id="10"]
+[ext_resource type="Resource" path="res://Resources/Events/on_player_attacked.tres" id="11"]
+[ext_resource type="Resource" path="res://Resources/Events/on_player_dodged.tres" id="12"]
+[ext_resource type="Resource" path="res://Resources/Events/on_player_damaged.tres" id="13"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_killed.tres" id="14"]
+[ext_resource type="Resource" path="res://Resources/Events/on_score_earned.tres" id="15"]
+[ext_resource type="Resource" path="res://Resources/Events/on_wave_completed.tres" id="16"]
+[ext_resource type="Resource" path="res://Resources/Events/on_game_over.tres" id="17"]
+[ext_resource type="Resource" path="res://Resources/Events/active_enemies.tres" id="18"]
+[ext_resource type="Script" path="res://Scripts/Player/PlayerController.cs" id="19"]
+[ext_resource type="Script" path="res://Scripts/Player/PlayerCombat.cs" id="20"]
+[ext_resource type="Script" path="res://Scripts/Enemies/EnemySpawner.cs" id="21"]
+[ext_resource type="Script" path="res://Scripts/Effects/AudioManager.cs" id="22"]
+[ext_resource type="Script" path="res://Scripts/Effects/ScreenShake.cs" id="23"]
+[ext_resource type="Script" path="res://Scripts/UI/HUD.cs" id="24"]
+[ext_resource type="Script" path="res://Scripts/Core/MainSetup.cs" id="25"]
+[ext_resource type="Script" path="res://Scripts/UI/PauseMenu.cs" id="26"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.05, 0.05, 0.1, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.3, 0.4, 1)
+ambient_light_energy = 0.5
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1"]
+size = Vector2(50, 50)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+albedo_color = Color(0.15, 0.15, 0.2, 1)
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_1"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_1"]
+vertices = PackedVector3Array(-25, 0, -25, 25, 0, -25, 25, 0, 25, -25, 0, 25)
+polygons = [PackedInt32Array(0, 1, 2, 3)]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+albedo_color = Color(0.2, 0.5, 0.9, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(0.1, 0.1, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3"]
+albedo_color = Color(0.75, 0.75, 0.75, 1)
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1")
+PlayerConfig = ExtResource("2")
+WaveConfig = ExtResource("3")
+WeaponConfig = ExtResource("4")
+ProjectileConfig = ExtResource("5")
+_health = ExtResource("6")
+_stamina = ExtResource("7")
+_score = ExtResource("8")
+_waveNumber = ExtResource("9")
+_onPlayerDied = ExtResource("10")
+_onPlayerAttacked = ExtResource("11")
+_onPlayerDodged = ExtResource("12")
+_onPlayerDamaged = ExtResource("13")
+_onEnemyKilled = ExtResource("14")
+_onScoreEarned = ExtResource("15")
+_onWaveCompleted = ExtResource("16")
+_onGameOver = ExtResource("17")
+_activeEnemies = ExtResource("18")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 20, 0)
+shadow_enabled = true
+light_energy = 1.2
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.573576, 0.819152, 0, -0.819152, 0.573576, 0, 18, 12)
+fov = 50.0
+current = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("PlaneMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("WorldBoundaryShape3D_1")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_1")
+
+[node name="Enemies" type="Node3D" parent="."]
+
+[node name="Player" type="CharacterBody3D" parent="."]
+script = ExtResource("19")
+Config = ExtResource("2")
+_health = ExtResource("6")
+_stamina = ExtResource("7")
+_onPlayerDied = ExtResource("10")
+_onPlayerDamaged = ExtResource("13")
+_onPlayerDodged = ExtResource("12")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="WeaponPivot" type="Node3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.0, -0.5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Player/WeaponPivot"]
+mesh = SubResource("BoxMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_3")
+
+[node name="PlayerCombat" type="Node3D" parent="Player"]
+script = ExtResource("20")
+Weapon = ExtResource("4")
+ProjectileConfig = ExtResource("5")
+_onEnemyKilled = ExtResource("14")
+_onPlayerAttacked = ExtResource("11")
+_activeEnemies = ExtResource("18")
+
+[node name="EnemySpawner" type="Node3D" parent="."]
+script = ExtResource("21")
+WaveConfig = ExtResource("3")
+_activeEnemies = ExtResource("18")
+_waveNumber = ExtResource("9")
+_onWaveCompleted = ExtResource("16")
+_onEnemyKilled = ExtResource("14")
+_onScoreEarned = ExtResource("15")
+
+[node name="AudioManager" type="Node3D" parent="."]
+script = ExtResource("22")
+_onPlayerAttacked = ExtResource("11")
+_onPlayerDodged = ExtResource("12")
+_onPlayerDamaged = ExtResource("13")
+_onEnemyKilled = ExtResource("14")
+
+[node name="ScreenShake" type="Node" parent="."]
+script = ExtResource("23")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+process_mode = 3
+
+[node name="HUD" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("24")
+_health = ExtResource("6")
+_stamina = ExtResource("7")
+_score = ExtResource("8")
+_waveNumber = ExtResource("9")
+_onGameOver = ExtResource("17")
+_onWaveCompleted = ExtResource("16")
+
+[node name="PauseMenu" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("26")
+_onGameOver = ExtResource("17")
+
+[node name="Setup" type="Node" parent="."]
+script = ExtResource("25")

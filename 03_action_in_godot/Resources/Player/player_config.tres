@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PlayerConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/PlayerConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MaxHealth = 100
+MaxStamina = 100.0
+StaminaRegenRate = 20.0
+MoveSpeed = 8.0
+DodgeSpeed = 20.0
+DodgeDuration = 0.4
+DodgeStaminaCost = 25.0
+DodgeCooldown = 0.2
+ComboWindow = 0.8
+AttackDuration = 0.35
+Gravity = 30.0
+RotationSpeed = 12.0

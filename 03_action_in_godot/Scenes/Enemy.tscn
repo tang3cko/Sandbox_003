@@ -1,0 +1,18 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/Enemy.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Events/active_enemies.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Events/on_enemy_killed.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Events/on_score_earned.tres" id="4"]
+
+[node name="Enemy" type="Node3D" groups=["enemies"]]
+script = ExtResource("1")
+_activeEnemies = ExtResource("2")
+_onEnemyKilled = ExtResource("3")
+_onScoreEarned = ExtResource("4")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 1.0
+target_desired_distance = 1.0
+avoidance_enabled = true
+radius = 0.5

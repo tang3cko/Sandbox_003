@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WeaponConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WeaponConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Sword"
+BaseDamage = 20
+AttackSpeed = 1.0
+Range = 2.5
+KnockbackForce = 5.0
+HitStopDuration = 0.05
+TrailColor = Color(0.8, 0.9, 1.0, 1)

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WaveConfig.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Enemies/melee_grunt.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Enemies/heavy_brute.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Enemies/fast_runner.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+SpawnInterval = 1.5
+TimeBetweenWaves = 5.0
+EnemyTypes = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4")])

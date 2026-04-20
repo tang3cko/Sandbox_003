@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+DisplayName = "Grunt"
+MaxHealth = 50
+MoveSpeed = 4.0
+Damage = 10
+AttackRange = 2.0
+AttackCooldown = 1.5
+ScoreReward = 100
+GoldReward = 10
+DetectionRange = 15.0
+Scale = 1.0
+Color = Color(0.8, 0.2, 0.2, 1)
+KnockbackResistance = 0.0

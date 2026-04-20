@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProjectileConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/ProjectileConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Damage = 15
+Speed = 25.0
+Lifetime = 3.0
+Scale = 0.3
+Color = Color(0.2, 0.8, 1.0, 1)
