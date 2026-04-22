@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Core/GameManager.cs" id="1"]
 [ext_resource type="Resource" path="res://Resources/Player/player_config.tres" id="2"]
@@ -26,6 +26,7 @@
 [ext_resource type="Script" path="res://Scripts/UI/HUD.cs" id="24"]
 [ext_resource type="Script" path="res://Scripts/Core/MainSetup.cs" id="25"]
 [ext_resource type="Script" path="res://Scripts/UI/PauseMenu.cs" id="26"]
+[ext_resource type="Script" path="res://Scripts/Player/PlayerAnimator.cs" id="27"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -134,6 +135,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.0, -0.5)
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Player/WeaponPivot"]
 mesh = SubResource("BoxMesh_1")
 surface_material_override/0 = SubResource("StandardMaterial3D_3")
+
+[node name="PlayerAnimator" type="Node" parent="Player"]
+script = ExtResource("27")
 
 [node name="PlayerCombat" type="Node3D" parent="Player"]
 script = ExtResource("20")

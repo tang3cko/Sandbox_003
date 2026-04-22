@@ -15,6 +15,7 @@ public partial class Enemy : Node3D
     private Node3D _target;
     private float _attackCooldown;
     private MeshInstance3D _mesh;
+    private EnemyAnimator _animator;
     private bool _isDead;
     private float _knockbackX;
     private float _knockbackZ;
@@ -30,6 +31,12 @@ public partial class Enemy : Node3D
         _navAgent = GetNode<NavigationAgent3D>("NavigationAgent3D");
 
         BuildVisual();
+
+        _animator = new EnemyAnimator();
+        _animator.Name = "EnemyAnimator";
+        AddChild(_animator);
+        _animator.Initialize(_mesh);
+
         _activeEnemies?.Add(this);
     }
 
@@ -94,13 +101,14 @@ public partial class Enemy : Node3D
         _knockbackX = knockbackDir.X * actualKnockback;
         _knockbackZ = knockbackDir.Z * actualKnockback;
 
-        // Flash
+        // Hit flash (material) + hit animation (squash via AnimationPlayer)
         if (_mesh?.MaterialOverride is StandardMaterial3D mat)
         {
             mat.AlbedoColor = Colors.White;
             var tween = CreateTween();
             tween.TweenProperty(mat, "albedo_color", Config.Color, 0.15f);
         }
+        _animator?.PlayHit();
 
         if (_currentHealth <= 0)
         {
@@ -126,8 +134,11 @@ public partial class Enemy : Node3D
         _onEnemyKilled?.Raise();
         _onScoreEarned?.Raise(Config.ScoreReward);
 
+        _animator?.PlayDeath();
+
+        // QueueFree after death animation
         var tween = CreateTween();
-        tween.TweenProperty(this, "scale", Vector3.Zero, 0.3f);
+        tween.TweenInterval(0.5f);
         tween.TweenCallback(Callable.From(QueueFree));
     }
 
