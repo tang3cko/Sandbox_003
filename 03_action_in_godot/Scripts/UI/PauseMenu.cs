@@ -33,11 +33,19 @@ public partial class PauseMenu : Control
             return;
         }
 
-        if (@event is InputEventKey { Pressed: true } key && key.Keycode == Key.R)
+        if (@event is InputEventKey { Pressed: true } key)
         {
-            if (!_isPaused && !_isGameOver) return;
-            Restart();
-            return;
+            if (key.Keycode == Key.R && (_isPaused || _isGameOver))
+            {
+                Restart();
+                return;
+            }
+
+            if (key.Keycode == Key.T && (_isPaused || _isGameOver))
+            {
+                GoToTitle();
+                return;
+            }
         }
     }
 
@@ -53,6 +61,13 @@ public partial class PauseMenu : Control
         Engine.TimeScale = 1.0;
         GetTree().Paused = false;
         GetTree().ReloadCurrentScene();
+    }
+
+    private void GoToTitle()
+    {
+        Engine.TimeScale = 1.0;
+        GetTree().Paused = false;
+        GetTree().ChangeSceneToFile("res://Scenes/Title.tscn");
     }
 
     private void HandleGameOver()
@@ -90,6 +105,10 @@ public partial class PauseMenu : Control
         var restartHint = CreateLabel("Restart: R", 36);
         restartHint.HorizontalAlignment = HorizontalAlignment.Center;
         vbox.AddChild(restartHint);
+
+        var titleHint = CreateLabel("Title: T", 36);
+        titleHint.HorizontalAlignment = HorizontalAlignment.Center;
+        vbox.AddChild(titleHint);
 
         _pausePanel.AddChild(vbox);
         AddChild(_pausePanel);

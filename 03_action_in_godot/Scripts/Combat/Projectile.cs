@@ -2,12 +2,13 @@ namespace ArenaSurvivor;
 
 using Godot;
 
-public partial class Projectile : Node3D
+public partial class Projectile : Area3D
 {
     private Vector3 _direction;
     private ProjectileConfig _config;
     private float _lifetime;
     private MeshInstance3D _mesh;
+    private bool _hit;
 
     public void Initialize(Vector3 startPosition, Vector3 direction, ProjectileConfig config)
     {
@@ -16,11 +17,21 @@ public partial class Projectile : Node3D
         _config = config;
         _lifetime = config.Lifetime;
 
+        // Layer 6 = Projectile, detect Layer 5 = EnemyHitbox
+        CollisionLayer = 1 << 5;
+        CollisionMask = 1 << 4;
+        Monitoring = true;
+
         BuildVisual();
+        BuildCollision();
+
+        AreaEntered += OnAreaEntered;
     }
 
     public override void _Process(double delta)
     {
+        if (_hit) return;
+
         var dt = (float)delta;
         _lifetime -= dt;
 
@@ -31,24 +42,16 @@ public partial class Projectile : Node3D
         }
 
         GlobalPosition += _direction * _config.Speed * dt;
-        CheckHit();
     }
 
-    private void CheckHit()
+    private void OnAreaEntered(Area3D area)
     {
-        foreach (var node in GetTree().GetNodesInGroup("enemies"))
-        {
-            if (node is not Enemy enemy || enemy.IsDead) continue;
+        if (_hit) return;
+        if (area.GetParent() is not Enemy enemy || enemy.IsDead) return;
 
-            // Compare on XZ plane, ignoring Y offset from capsule center
-            var enemyPosFlat = enemy.GlobalPosition with { Y = 0 };
-            var projPosFlat = GlobalPosition with { Y = 0 };
-            if (enemyPosFlat.DistanceTo(projPosFlat) > 1.5f) continue;
-
-            enemy.TakeDamage(_config.Damage, GlobalPosition, 3.0f);
-            QueueFree();
-            return;
-        }
+        _hit = true;
+        enemy.TakeDamage(_config.Damage, GlobalPosition, 3.0f);
+        QueueFree();
     }
 
     private void BuildVisual()
@@ -66,5 +69,14 @@ public partial class Projectile : Node3D
         mat.EmissionEnergyMultiplier = 3.0f;
         _mesh.MaterialOverride = mat;
         AddChild(_mesh);
+    }
+
+    private void BuildCollision()
+    {
+        var shape = new CollisionShape3D();
+        var sphere = new SphereShape3D();
+        sphere.Radius = _config.Scale * 1.5f;
+        shape.Shape = sphere;
+        AddChild(shape);
     }
 }

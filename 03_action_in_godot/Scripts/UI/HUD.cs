@@ -92,7 +92,7 @@ public partial class HUD : Control
 
     private void ShowGameOver()
     {
-        _gameOverLabel.Text = $"GAME OVER\nScore: {_score.Value}\nWave: {_waveNumber.Value}\n\nPress R to restart";
+        _gameOverLabel.Text = $"GAME OVER\nScore: {_score.Value}\nWave: {_waveNumber.Value}\n\nR: Restart  T: Title";
         _gameOverPanel.Visible = true;
     }
 

@@ -14,21 +14,24 @@ public partial class AudioManager : Node3D
     private AudioStreamPlayer3D _dodgeSound;
     private AudioStreamPlayer3D _hitSound;
     private AudioStreamPlayer3D _killSound;
-    private AudioStreamPlayer _ambientSound;
+    private AudioStreamPlayer _bgmPlayer;
+    private AudioStreamPlayer _ambientPlayer;
 
     public override void _Ready()
     {
-        _attackSound = CreateSpatialPlayer(1.0f, 0.8f);
-        _dodgeSound = CreateSpatialPlayer(0.7f, 1.2f);
-        _hitSound = CreateSpatialPlayer(0.9f, 0.6f);
-        _killSound = CreateSpatialPlayer(1.0f, 1.5f);
-        _ambientSound = CreateAmbientPlayer(0.3f, 1.0f);
+        _attackSound = CreateSpatialPlayer("SFX", 0.8f, 30.0f);
+        _dodgeSound = CreateSpatialPlayer("SFX", 1.2f, 25.0f);
+        _hitSound = CreateSpatialPlayer("SFX", 0.6f, 35.0f);
+        _killSound = CreateSpatialPlayer("SFX", 1.5f, 40.0f);
+        _bgmPlayer = CreateGlobalPlayer("BGM", -6.0f);
+        _ambientPlayer = CreateGlobalPlayer("Ambient", -12.0f);
 
         _onPlayerAttacked.Raised += HandleAttack;
         _onPlayerDodged.Raised += HandleDodge;
         _onPlayerDamaged.Raised += HandleDamaged;
         _onEnemyKilled.Raised += HandleKill;
 
+        PlayBgmLoop();
         PlayAmbientLoop();
     }
 
@@ -52,10 +55,22 @@ public partial class AudioManager : Node3D
         for (int i = 0; i < frames; i++)
         {
             float t = (float)i / 44100;
-            float envelope = 1.0f - (t / duration);
+            float envelope = Mathf.Exp(-t / duration * 4.0f);
             float sample = Mathf.Sin(t * frequency * Mathf.Tau) * envelope * 0.3f;
+            // Add harmonics for richer sound
+            sample += Mathf.Sin(t * frequency * 2 * Mathf.Tau) * envelope * 0.1f;
+            sample += Mathf.Sin(t * frequency * 3 * Mathf.Tau) * envelope * 0.05f;
             playback.PushFrame(new Vector2(sample, sample));
         }
+    }
+
+    private void PlayBgmLoop()
+    {
+        var generator = new AudioStreamGenerator();
+        generator.MixRate = 44100;
+        generator.BufferLength = 0.5f;
+        _bgmPlayer.Stream = generator;
+        _bgmPlayer.Play();
     }
 
     private void PlayAmbientLoop()
@@ -63,25 +78,27 @@ public partial class AudioManager : Node3D
         var generator = new AudioStreamGenerator();
         generator.MixRate = 44100;
         generator.BufferLength = 0.5f;
-        _ambientSound.Stream = generator;
-        _ambientSound.Play();
+        _ambientPlayer.Stream = generator;
+        _ambientPlayer.Play();
     }
 
-    private AudioStreamPlayer3D CreateSpatialPlayer(float volumeDb, float pitchScale)
+    private AudioStreamPlayer3D CreateSpatialPlayer(string bus, float pitchScale, float maxDistance)
     {
         var player = new AudioStreamPlayer3D();
-        player.VolumeDb = Mathf.LinearToDb(volumeDb);
+        player.Bus = bus;
         player.PitchScale = pitchScale;
-        player.MaxDistance = 50.0f;
+        player.MaxDistance = maxDistance;
+        player.AttenuationModel = AudioStreamPlayer3D.AttenuationModelEnum.InverseSquareDistance;
+        player.UnitSize = 5.0f;
         AddChild(player);
         return player;
     }
 
-    private AudioStreamPlayer CreateAmbientPlayer(float volumeDb, float pitchScale)
+    private AudioStreamPlayer CreateGlobalPlayer(string bus, float volumeDb)
     {
         var player = new AudioStreamPlayer();
-        player.VolumeDb = Mathf.LinearToDb(volumeDb);
-        player.PitchScale = pitchScale;
+        player.Bus = bus;
+        player.VolumeDb = volumeDb;
         AddChild(player);
         return player;
     }

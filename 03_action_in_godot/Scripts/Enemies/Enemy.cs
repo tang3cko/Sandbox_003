@@ -135,6 +135,7 @@ public partial class Enemy : Node3D
         _onScoreEarned?.Raise(Config.ScoreReward);
 
         _animator?.PlayDeath();
+        DeathBurst.Create(GlobalPosition + Vector3.Up * 0.8f, Config.Color, Config.Scale, GetTree().Root);
 
         // QueueFree after death animation
         var tween = CreateTween();
@@ -155,6 +156,20 @@ public partial class Enemy : Node3D
         mat.AlbedoColor = Config.Color;
         _mesh.MaterialOverride = mat;
         AddChild(_mesh);
+
+        // Hitbox for Area3D-based detection (Layer 5 = EnemyHitbox)
+        var hitbox = new Area3D();
+        hitbox.Name = "Hitbox";
+        hitbox.CollisionLayer = 1 << 4; // Layer 5
+        hitbox.CollisionMask = 0;
+        var shape = new CollisionShape3D();
+        var capsuleShape = new CapsuleShape3D();
+        capsuleShape.Radius = 0.4f * Config.Scale;
+        capsuleShape.Height = 1.6f * Config.Scale;
+        shape.Shape = capsuleShape;
+        shape.Position = new Vector3(0, 0.8f * Config.Scale, 0);
+        hitbox.AddChild(shape);
+        AddChild(hitbox);
     }
 
     public override void _ExitTree()
