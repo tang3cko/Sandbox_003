@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyTypeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyTypeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+TypeName = "Swarmling"
+Health = 20
+MoveSpeed = 2.5
+ContactDamage = 5
+XPValue = 3
+SeparationRadius = 1.2
+SeparationForce = 8.0
+BaseColor = Color(0.8, 0.2, 0.2, 1)
+MeshRadius = 0.4
+MeshHeight = 0.8

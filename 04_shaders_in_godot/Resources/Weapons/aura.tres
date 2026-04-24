@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WeaponConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WeaponConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+WeaponName = "Void Aura"
+Type = 2
+Damage = 5
+FireRate = 4.0
+Range = 4.0
+ProjectileSpeed = 0.0
+ProjectileCount = 0
+OrbitalSpeed = 0.0
+OrbitalRadius = 0.0
+ProjectileColor = Color(0.8, 0.3, 1.0, 1)

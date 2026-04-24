@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WeaponConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WeaponConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+WeaponName = "Guardian Orb"
+Type = 0
+Damage = 15
+FireRate = 2.0
+Range = 3.0
+ProjectileSpeed = 0.0
+ProjectileCount = 1
+OrbitalSpeed = 2.0
+OrbitalRadius = 2.0
+ProjectileColor = Color(0.3, 0.6, 1.0, 1)

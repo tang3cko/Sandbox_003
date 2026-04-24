@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyTypeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyTypeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+TypeName = "Tank"
+Health = 100
+MoveSpeed = 1.5
+ContactDamage = 12
+XPValue = 10
+SeparationRadius = 1.5
+SeparationForce = 10.0
+BaseColor = Color(0.2, 0.7, 0.3, 1)
+MeshRadius = 0.6
+MeshHeight = 1.2

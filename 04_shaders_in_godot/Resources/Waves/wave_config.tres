@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WaveConfig.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Enemies/swarmling.tres" id="2"]
+[ext_resource type="Resource" path="res://Resources/Enemies/charger.tres" id="3"]
+[ext_resource type="Resource" path="res://Resources/Enemies/tank.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+BaseEnemyCount = 20
+GrowthRate = 8.0
+BaseSpawnInterval = 0.2
+TimeBetweenWaves = 2.0
+ArenaHalfSize = 25.0
+SpawnDistanceMin = 15.0
+SpawnDistanceMax = 20.0
+EnemyTypes = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4")])

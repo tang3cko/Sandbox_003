@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/UpgradeConfig.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Weapons/orbital.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = 1
+UpgradeName = "Guardian Orb"
+Description = "Add a rotating orb"
+Type = 0
+Value = 1.0
+WeaponToAdd = ExtResource("2")

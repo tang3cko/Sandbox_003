@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/UpgradeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = 4
+UpgradeName = "Power Up"
+Description = "Increase all damage by 25%"
+Type = 1
+Value = 1.25
