@@ -14,7 +14,7 @@ A sandbox project for learning Godot 4.6 with C#.
 | `02_td_in_godot/` | 2-3 | 3D Tower Defense. Signal + Resource architecture, Humble Object, TDD |
 | `03_action_in_godot/` | 4 | 3D action game. Physics, Navigation, Animation, Audio, Particles, Scene management |
 | `04_shaders_in_godot/` | 5 | GDShader, MultiMesh, CompositorEffect |
-| `05_multiplayer_godot/` | 6 | ENet, RPC, Steam integration |
+| `05_multiplayer_godot/` | 6 | ENet, RPC, Server Authority (optional: Steam) |
 
 ---
 
