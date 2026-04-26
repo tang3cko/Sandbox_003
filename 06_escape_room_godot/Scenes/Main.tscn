@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/Levels/TestRoom.tscn" id="level"]
+[ext_resource type="PackedScene" path="res://Scenes/Player/Player.tscn" id="player"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/HUD.tscn" id="hud"]
+
+[node name="Main" type="Node"]
+
+[node name="Level" parent="." instance=ExtResource("level")]
+
+[node name="Player" parent="." instance=ExtResource("player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="HUD" parent="." instance=ExtResource("hud")]

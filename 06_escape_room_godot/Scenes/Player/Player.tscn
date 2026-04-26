@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Player/FirstPersonController.cs" id="1"]
+[ext_resource type="Script" path="res://Scripts/Player/PlayerInteractor.cs" id="2"]
+[ext_resource type="Resource" path="res://Resources/Events/on_interaction_context_changed.tres" id="3"]
+
+[sub_resource type="CapsuleShape3D" id="capsule"]
+radius = 0.3
+height = 1.6
+
+[node name="Player" type="CharacterBody3D"]
+collision_layer = 1
+collision_mask = 4
+script = ExtResource("1")
+_headPath = NodePath("Head")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("capsule")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head"]
+current = true
+
+[node name="InteractionRay" type="RayCast3D" parent="Head"]
+target_position = Vector3(0, 0, -2.5)
+collision_mask = 2
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="Interactor" type="Node" parent="."]
+script = ExtResource("2")
+InteractAction = "interact"
+_rayPath = NodePath("../Head/InteractionRay")
+_bodyPath = NodePath("..")
+_onContextChanged = ExtResource("3")

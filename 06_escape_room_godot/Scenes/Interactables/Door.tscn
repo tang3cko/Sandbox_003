@@ -1,0 +1,57 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Interaction/DoorInteractable.cs" id="1"]
+[ext_resource type="Resource" path="res://Resources/Validators/key_brass_required.tres" id="2"]
+
+[sub_resource type="BoxMesh" id="door_mesh"]
+size = Vector3(1.0, 2.0, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="door_mat"]
+albedo_color = Color(0.78, 0.5, 0.25, 1)
+metallic = 0.0
+roughness = 0.55
+emission_enabled = true
+emission = Color(0.18, 0.1, 0.05, 1)
+
+[sub_resource type="BoxShape3D" id="door_shape"]
+size = Vector3(1.0, 2.0, 0.1)
+
+[sub_resource type="BoxShape3D" id="interact_shape"]
+size = Vector3(1.2, 2.2, 0.6)
+
+[node name="Door" type="Node3D"]
+
+[node name="Pivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, 0)
+
+[node name="DoorBody" type="StaticBody3D" parent="Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.0, 0)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Pivot/DoorBody"]
+mesh = SubResource("door_mesh")
+material_override = SubResource("door_mat")
+
+[node name="Collision" type="CollisionShape3D" parent="Pivot/DoorBody"]
+shape = SubResource("door_shape")
+
+[node name="Interactable" type="Area3D" parent="Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.0, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1")
+Verb = "Open"
+TargetName = "Door"
+InteractionPriority = 0
+RequiresHold = true
+HoldDuration = 0.5
+Validators = Array[Resource]([ExtResource("2")])
+ConsumeKey = false
+OpenAngleDegrees = -90.0
+OpenDuration = 0.6
+_pivotPath = NodePath("..")
+_bodyPath = NodePath("../DoorBody")
+
+[node name="Collision" type="CollisionShape3D" parent="Pivot/Interactable"]
+shape = SubResource("interact_shape")
