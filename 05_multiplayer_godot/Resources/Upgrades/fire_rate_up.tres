@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/UpgradeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = 8
+UpgradeName = "Rapid Fire"
+Description = "Increase fire rate by 30%"
+Type = 5
+Value = 1.3

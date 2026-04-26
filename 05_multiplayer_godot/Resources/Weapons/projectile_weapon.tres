@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WeaponConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/WeaponConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+WeaponName = "Magic Bolt"
+Type = 1
+Damage = 25
+FireRate = 1.5
+Range = 12.0
+ProjectileSpeed = 18.0
+ProjectileCount = 1
+OrbitalSpeed = 0.0
+OrbitalRadius = 0.0
+ProjectileColor = Color(1.0, 0.4, 0.2, 1)

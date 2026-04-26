@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyTypeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/EnemyTypeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+TypeName = "Charger"
+Health = 40
+MoveSpeed = 4.0
+ContactDamage = 8
+XPValue = 5
+SeparationRadius = 1.0
+SeparationForce = 6.0
+BaseColor = Color(0.9, 0.7, 0.1, 1)
+MeshRadius = 0.35
+MeshHeight = 0.7

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="IntVariable" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/ReactiveSO/Runtime/Variables/IntVariable.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+_initialValue = 1
+_value = 1

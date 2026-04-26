@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/UpgradeConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = 5
+UpgradeName = "Swift Feet"
+Description = "Increase move speed by 20%"
+Type = 2
+Value = 1.2

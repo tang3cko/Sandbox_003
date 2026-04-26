@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PlayerConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Configs/PlayerConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+MoveSpeed = 8.0
+MaxHealth = 150
+CollectRadius = 3.0
+MagnetRadius = 6.0
+MagnetSpeed = 12.0
