@@ -24,6 +24,15 @@ public static class WaveCalculator
 {
     public const int MaxWaves = 15;
 
+    public const float BaseDifficulty = 1.0f;
+    public const float DifficultyStepPerWave = 0.2f;
+    public const float MinSpawnInterval = 0.05f;
+
+    // Wave delay timings (seconds)
+    public const float InitialWaveDelay = 1f;
+    public const float StartSpawningDelay = 0.5f;
+    public const float DefaultTimeBetweenWaves = 3f;
+
     public static WaveState CreateInitial()
     {
         return new WaveState
@@ -98,13 +107,13 @@ public static class WaveCalculator
 
     public static float GetWaveDifficulty(int waveNumber)
     {
-        float difficulty = 1.0f + (waveNumber - 1) * 0.2f;
-        return difficulty < 1.0f ? 1.0f : difficulty;
+        float difficulty = BaseDifficulty + (waveNumber - 1) * DifficultyStepPerWave;
+        return difficulty < BaseDifficulty ? BaseDifficulty : difficulty;
     }
 
     public static float GetSpawnInterval(int waveNumber, float baseInterval)
     {
         float interval = baseInterval / GetWaveDifficulty(waveNumber);
-        return Math.Max(0.05f, interval);
+        return Math.Max(MinSpawnInterval, interval);
     }
 }

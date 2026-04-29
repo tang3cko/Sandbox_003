@@ -31,7 +31,7 @@ public partial class SwarmRenderer : MultiMeshInstance3D
         }
         else
         {
-            GD.PrintErr("SwarmRenderer: Failed to load swarm_enemy.gdshader");
+            NetLog.Error("SwarmRenderer: Failed to load swarm_enemy.gdshader");
         }
 
         capsule.SurfaceSetMaterial(0, _material);

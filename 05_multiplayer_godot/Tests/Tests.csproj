@@ -14,8 +14,28 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../Scripts/Core/SwarmCalculator.cs" Link="SwarmCalculator.cs" />
+    <Compile Include="../Scripts/Core/ContactCalculator.cs" Link="ContactCalculator.cs" />
     <Compile Include="../Scripts/Core/WaveCalculator.cs" Link="WaveCalculator.cs" />
     <Compile Include="../Scripts/Core/UpgradeCalculator.cs" Link="UpgradeCalculator.cs" />
+    <Compile Include="../Scripts/Core/PlayerCombatCalculator.cs" Link="PlayerCombatCalculator.cs" />
+    <Compile Include="../Scripts/Core/PlayerWeaponCalculator.cs" Link="PlayerWeaponCalculator.cs" />
+    <Compile Include="../Scripts/Core/ProjectileLifetimeCalculator.cs" Link="ProjectileLifetimeCalculator.cs" />
+    <Compile Include="../Scripts/Core/PeerIdParser.cs" Link="PeerIdParser.cs" />
+    <Compile Include="../Scripts/Core/ScreenShakeCalculator.cs" Link="ScreenShakeCalculator.cs" />
     <Compile Include="../Scripts/Network/SwarmSnapshot.cs" Link="SwarmSnapshot.cs" />
+    <Compile Include="../Scripts/Network/ProjectileSnapshot.cs" Link="ProjectileSnapshot.cs" />
+    <Compile Include="../Scripts/Network/GameStateSnapshot.cs" Link="GameStateSnapshot.cs" />
+    <Compile Include="../Scripts/Core/InterpolationIdMatcher.cs" Link="InterpolationIdMatcher.cs" />
+    <Compile Include="../Scripts/Core/NearestEntityFinder.cs" Link="NearestEntityFinder.cs" />
+    <Compile Include="../Scripts/Core/InputDirectionCalculator.cs" Link="InputDirectionCalculator.cs" />
+    <Compile Include="../Scripts/Core/ProjectilePaletteCalculator.cs" Link="ProjectilePaletteCalculator.cs" />
+    <Compile Include="../Scripts/Core/SpawnPositionCalculator.cs" Link="SpawnPositionCalculator.cs" />
+    <Compile Include="../Scripts/Core/PlayerLifecycleCalculator.cs" Link="PlayerLifecycleCalculator.cs" />
+    <Compile Include="../Scripts/Core/GameOverCleanupCalculator.cs" Link="GameOverCleanupCalculator.cs" />
+    <Compile Include="../Scripts/Core/SeparationForceCalculator.cs" Link="SeparationForceCalculator.cs" />
+    <Compile Include="../Scripts/Core/SpatialSeparationGrid.cs" Link="SpatialSeparationGrid.cs" />
+    <Compile Include="../Scripts/Core/TickAccumulator.cs" Link="TickAccumulator.cs" />
+    <Compile Include="../Scripts/Core/PoolIndexManager.cs" Link="PoolIndexManager.cs" />
+    <Compile Include="../Scripts/Core/InterpolationStartCalculator.cs" Link="InterpolationStartCalculator.cs" />
   </ItemGroup>
 </Project>

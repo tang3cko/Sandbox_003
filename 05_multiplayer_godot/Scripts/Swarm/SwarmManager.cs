@@ -11,9 +11,11 @@ public partial class SwarmManager : Node3D
     [Export] private Vector3EventChannel _onEnemyKilledAt;
     [Export] private IntEventChannel _onPlayerDamaged;
 
+    public GameStateSync GameState { get; set; }
+
     private const int MaxEntities = 600;
-    private const float ContactRadius = 1.5f;
-    private const float ContactDamageInterval = 1.0f;
+    private const float ContactRadius = ContactCalculator.DefaultContactRadius;
+    private const float ContactDamageInterval = ContactCalculator.DefaultContactDamageInterval;
 
     private float[] _posX, _posZ;
     private float[] _velX, _velZ;
@@ -21,6 +23,8 @@ public partial class SwarmManager : Node3D
     private int[] _enemyTypeIndex;
     private float[] _damageFlashTimer;
     private float[] _deathTimer;
+    private int[] _entityId;
+    private ushort _nextEntityId = 1;
     private int _activeCount;
 
     private SwarmRenderer _renderer;
@@ -35,6 +39,8 @@ public partial class SwarmManager : Node3D
     private readonly List<TargetEntry> _targets = new();
     private float[] _targetPosBufX = new float[NetworkConfig.MaxPlayers];
     private float[] _targetPosBufZ = new float[NetworkConfig.MaxPlayers];
+    private readonly SpatialSeparationGrid _separationGrid = new();
+    private float _simAccumulator;
 
     public int ActiveCount => _activeCount;
     public int TargetCount => _targets.Count;
@@ -44,7 +50,8 @@ public partial class SwarmManager : Node3D
         out float[] velX, out float[] velZ,
         out int[] typeIndex,
         out float[] flashTimer,
-        out float[] deathTimer)
+        out float[] deathTimer,
+        out int[] entityId)
     {
         posX = _posX;
         posZ = _posZ;
@@ -53,6 +60,7 @@ public partial class SwarmManager : Node3D
         typeIndex = _enemyTypeIndex;
         flashTimer = _damageFlashTimer;
         deathTimer = _deathTimer;
+        entityId = _entityId;
     }
 
     public override void _Ready()
@@ -65,9 +73,14 @@ public partial class SwarmManager : Node3D
         _enemyTypeIndex = new int[MaxEntities];
         _damageFlashTimer = new float[MaxEntities];
         _deathTimer = new float[MaxEntities];
+        _entityId = new int[MaxEntities];
         _activeCount = 0;
 
         _renderer = GetNode<SwarmRenderer>("SwarmRenderer");
+
+        _onEnemyKilled ??= GD.Load<VoidEventChannel>("res://Resources/Events/on_enemy_killed.tres");
+        _onEnemyKilledAt ??= GD.Load<Vector3EventChannel>("res://Resources/Events/on_enemy_killed_at.tres");
+        _onPlayerDamaged ??= GD.Load<IntEventChannel>("res://Resources/Events/on_player_damaged.tres");
 
         if (_targets.Count == 0)
         {
@@ -81,7 +94,7 @@ public partial class SwarmManager : Node3D
         if (player == null) return;
         if (player is not IDamageable damageable)
         {
-            GD.PrintErr($"[SwarmManager] {player.Name} does not implement IDamageable; skipping registration");
+            NetLog.Error($"[SwarmManager] {player.Name} does not implement IDamageable; skipping registration");
             return;
         }
         for (int i = 0; i < _targets.Count; i++)
@@ -126,22 +139,46 @@ public partial class SwarmManager : Node3D
         _enemyTypeIndex[i] = typeIndex;
         _damageFlashTimer[i] = 0f;
         _deathTimer[i] = SwarmCalculator.AliveMarker;
+        _entityId[i] = _nextEntityId++;
+        if (_nextEntityId == 0) _nextEntityId = 1;
 
         _activeCount++;
     }
 
     public override void _Process(double delta)
     {
+        bool isGameOver = GameState?.IsGameOver ?? false;
+        if (isGameOver)
+        {
+            // Consult the pure calculator each tick. The plan is data only — it's the
+            // manager's job to execute. Clearing is idempotent (Plan says nothing when
+            // counts are 0), so repeat consultation is safe.
+            var plan = GameOverCleanupCalculator.Compute(
+                liveEnemyCount: _activeCount,
+                liveProjectileCount: 0,
+                queuedWaveCount: 0,
+                isGameOver: true);
+            if (plan.ClearEnemies) ClearAllEnemies();
+            UploadToRenderer();
+            return;
+        }
+
         if (_targets.Count == 0 || WaveConfig?.EnemyTypes == null) return;
 
-        float dt = (float)delta;
-        float arenaHalf = WaveConfig.ArenaHalfSize;
-        int targetCount = CacheTargetPositions();
+        var (newAcc, ticks) = TickAccumulator.Advance(_simAccumulator, (float)delta);
+        _simAccumulator = newAcc;
 
-        UpdateMovement(dt, arenaHalf, targetCount);
-        UpdateTimers(dt);
-        CheckPlayerContact(dt, targetCount);
-        RemoveDeadEntities();
+        const float dt = TickAccumulator.DefaultFixedTimeStep;
+        float arenaHalf = WaveConfig.ArenaHalfSize;
+        for (int t = 0; t < ticks; t++)
+        {
+            int targetCount = CacheTargetPositions();
+            UpdateMovement(dt, arenaHalf, targetCount);
+            UpdateTimers(dt);
+            CheckPlayerContact(dt, targetCount);
+            RemoveDeadEntities();
+        }
+
         UploadToRenderer();
     }
 
@@ -167,6 +204,20 @@ public partial class SwarmManager : Node3D
 
     private void UpdateMovement(float dt, float arenaHalf, int targetCount)
     {
+        // Build the spatial grid once per tick using the maximum SeparationRadius
+        // across all enemy types. Per-entity queries still pass that entity's
+        // own radius; CalculateSeparation rejects out-of-range pairs, so the
+        // result is identical to the naive O(N^2) scan as long as cellSize >=
+        // any per-entity radius (3x3 cell scan covers it).
+        float maxSeparationRadius = 0f;
+        var enemyTypes = WaveConfig.EnemyTypes;
+        for (int t = 0; t < enemyTypes.Length; t++)
+        {
+            float r = enemyTypes[t].SeparationRadius;
+            if (r > maxSeparationRadius) maxSeparationRadius = r;
+        }
+        _separationGrid.Build(_posX, _posZ, _deathTimer, _activeCount, maxSeparationRadius);
+
         for (int i = 0; i < _activeCount; i++)
         {
             if (SwarmCalculator.IsDying(_deathTimer[i])) continue;
@@ -175,22 +226,17 @@ public partial class SwarmManager : Node3D
                 _posX[i], _posZ[i], _targetPosBufX, _targetPosBufZ, targetCount);
             if (nearestIdx < 0) continue;
 
-            var config = WaveConfig.EnemyTypes[_enemyTypeIndex[i]];
+            var config = enemyTypes[_enemyTypeIndex[i]];
             var move = SwarmCalculator.MoveToward(
                 _posX[i], _posZ[i],
                 _targetPosBufX[nearestIdx], _targetPosBufZ[nearestIdx],
                 config.MoveSpeed, dt);
 
-            float sepX = 0f, sepZ = 0f;
-            for (int j = 0; j < _activeCount; j++)
-            {
-                if (i == j || SwarmCalculator.IsDying(_deathTimer[j])) continue;
-                var sep = SwarmCalculator.CalculateSeparation(
-                    _posX[i], _posZ[i], _posX[j], _posZ[j],
-                    config.SeparationRadius, config.SeparationForce);
-                sepX += sep.VelX;
-                sepZ += sep.VelZ;
-            }
+            var sep = _separationGrid.ComputeAccumulatedSeparation(
+                i, _posX, _posZ, _deathTimer, _activeCount,
+                config.SeparationRadius, config.SeparationForce);
+            float sepX = sep.X;
+            float sepZ = sep.Z;
 
             _posX[i] = SwarmCalculator.ClampToArena(move.NewX + sepX * dt, arenaHalf);
             _posZ[i] = SwarmCalculator.ClampToArena(move.NewZ + sepZ * dt, arenaHalf);
@@ -216,12 +262,11 @@ public partial class SwarmManager : Node3D
 
     private void CheckPlayerContact(float dt, int targetCount)
     {
-        float contactRadiusSq = ContactRadius * ContactRadius;
         for (int t = 0; t < targetCount; t++)
         {
             var entry = _targets[t];
-            entry.ContactCooldown -= dt;
-            if (entry.ContactCooldown > 0f) continue;
+            entry.ContactCooldown = ContactCalculator.TickCooldown(entry.ContactCooldown, dt);
+            if (!ContactCalculator.IsCooldownReady(entry.ContactCooldown)) continue;
 
             float px = _targetPosBufX[t];
             float pz = _targetPosBufZ[t];
@@ -229,8 +274,7 @@ public partial class SwarmManager : Node3D
             {
                 if (SwarmCalculator.IsDying(_deathTimer[i])) continue;
 
-                float distSq = SwarmCalculator.DistanceSquared(_posX[i], _posZ[i], px, pz);
-                if (distSq < contactRadiusSq)
+                if (ContactCalculator.IsWithinContactRadius(_posX[i], _posZ[i], px, pz, ContactRadius))
                 {
                     var config = WaveConfig.EnemyTypes[_enemyTypeIndex[i]];
                     entry.Damageable?.TakeDamage(config.ContactDamage);
@@ -260,29 +304,45 @@ public partial class SwarmManager : Node3D
 
     public (float x, float z) GetNearestAlivePosition(float fromX, float fromZ)
     {
-        int nearest = -1;
-        float nearestDistSq = float.MaxValue;
+        var result = NearestEntityFinder.FindNearestAlivePosition(
+            fromX, fromZ, _posX, _posZ, _deathTimer, _activeCount);
+        return (result.X, result.Z);
+    }
+
+    public bool TryDamageFirstInRadius(
+        float centerX, float centerZ,
+        float radius, int damage,
+        out float hitX, out float hitZ)
+    {
+        float radiusSq = radius * radius;
+        int firstHit = -1;
+        float firstDistSq = float.MaxValue;
 
         for (int i = 0; i < _activeCount; i++)
         {
             if (SwarmCalculator.IsDying(_deathTimer[i])) continue;
 
             float distSq = SwarmCalculator.DistanceSquared(
-                _posX[i], _posZ[i], fromX, fromZ);
+                _posX[i], _posZ[i], centerX, centerZ);
 
-            if (distSq < nearestDistSq)
+            if (distSq < radiusSq && distSq < firstDistSq)
             {
-                nearest = i;
-                nearestDistSq = distSq;
+                firstHit = i;
+                firstDistSq = distSq;
             }
         }
 
-        if (nearest >= 0)
+        if (firstHit >= 0)
         {
-            return (_posX[nearest], _posZ[nearest]);
+            hitX = _posX[firstHit];
+            hitZ = _posZ[firstHit];
+            DamageEntity(firstHit, damage);
+            return true;
         }
 
-        return (fromX, fromZ);
+        hitX = 0f;
+        hitZ = 0f;
+        return false;
     }
 
     private void DamageEntity(int index, int damage)
@@ -323,6 +383,7 @@ public partial class SwarmManager : Node3D
                     _enemyTypeIndex[i] = _enemyTypeIndex[last];
                     _damageFlashTimer[i] = _damageFlashTimer[last];
                     _deathTimer[i] = _deathTimer[last];
+                    _entityId[i] = _entityId[last];
                 }
 
                 _activeCount--;
@@ -338,6 +399,13 @@ public partial class SwarmManager : Node3D
             _posX, _posZ, _velX, _velZ,
             _enemyTypeIndex, _damageFlashTimer, _deathTimer,
             _activeCount, WaveConfig.EnemyTypes);
+    }
+
+    // Drops every active entity slot. Used by the game-over cleanup path.
+    // Leaves backing arrays allocated and resets the active count to 0.
+    public void ClearAllEnemies()
+    {
+        _activeCount = 0;
     }
 
     public int GetAliveCount()

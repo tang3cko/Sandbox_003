@@ -11,18 +11,42 @@ public partial class ProjectileManager : Node3D
     private float[] _dirX, _dirZ;
     private float[] _speed;
     private int[] _damage;
-    private float[] _distanceTraveled;
-    private float[] _maxRange;
-    private Color[] _projColor;
+    private float[] _lifetime;
+    private int[] _ownerId;
+    private int[] _colorIdx;
+    private int[] _projectileId;
+    private ushort _nextProjectileId = 1;
     private int _projCount;
 
     private float[] _orbX, _orbZ;
     private Color[] _orbColor;
     private int _orbCount;
 
-    private MultiMeshInstance3D _projRenderer;
-    private MultiMeshInstance3D _orbRenderer;
     private SwarmManager _swarmManager;
+    private ProjectileRenderer _renderer;
+    private float _simAccumulator;
+
+    public GameStateSync GameState { get; set; }
+
+    public int ProjectileCount => _projCount;
+
+    public void GetSoAReference(
+        out float[] posX, out float[] posZ,
+        out float[] dirX, out float[] dirZ,
+        out float[] lifetime,
+        out int[] ownerId,
+        out int[] colorIdx,
+        out int[] projectileId)
+    {
+        posX = _projX;
+        posZ = _projZ;
+        dirX = _dirX;
+        dirZ = _dirZ;
+        lifetime = _lifetime;
+        ownerId = _ownerId;
+        colorIdx = _colorIdx;
+        projectileId = _projectileId;
+    }
 
     public override void _Ready()
     {
@@ -32,9 +56,10 @@ public partial class ProjectileManager : Node3D
         _dirZ = new float[MaxProjectiles];
         _speed = new float[MaxProjectiles];
         _damage = new int[MaxProjectiles];
-        _distanceTraveled = new float[MaxProjectiles];
-        _maxRange = new float[MaxProjectiles];
-        _projColor = new Color[MaxProjectiles];
+        _lifetime = new float[MaxProjectiles];
+        _ownerId = new int[MaxProjectiles];
+        _colorIdx = new int[MaxProjectiles];
+        _projectileId = new int[MaxProjectiles];
         _projCount = 0;
 
         _orbX = new float[MaxOrbitals];
@@ -42,48 +67,14 @@ public partial class ProjectileManager : Node3D
         _orbColor = new Color[MaxOrbitals];
         _orbCount = 0;
 
-        _swarmManager = GetNode<SwarmManager>("../SwarmManager");
-
-        SetupRenderers();
-    }
-
-    private void SetupRenderers()
-    {
-        _projRenderer = CreateMultiMeshRenderer(MaxProjectiles, 0.1f, 0.3f, "projectile");
-        AddChild(_projRenderer);
-
-        _orbRenderer = CreateMultiMeshRenderer(MaxOrbitals, 0.25f, 0.5f, "orbital");
-        AddChild(_orbRenderer);
-    }
-
-    private MultiMeshInstance3D CreateMultiMeshRenderer(int count, float radius, float height, string name)
-    {
-        var capsule = new CapsuleMesh { Radius = radius, Height = height };
-
-        var material = new ShaderMaterial();
-        var shader = GD.Load<Shader>("res://Shaders/projectile.gdshader");
-        if (shader != null)
-        {
-            material.Shader = shader;
-        }
-        capsule.SurfaceSetMaterial(0, material);
-
-        var multiMesh = new MultiMesh
-        {
-            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-            UseCustomData = true,
-            UseColors = true,
-            Mesh = capsule,
-            InstanceCount = count,
-            VisibleInstanceCount = 0,
-        };
-
-        return new MultiMeshInstance3D { Multimesh = multiMesh, Name = name };
+        _swarmManager = GetNodeOrNull<SwarmManager>("../SwarmManager");
+        _renderer = GetNodeOrNull<ProjectileRenderer>("ProjectileRenderer");
     }
 
     public void SpawnProjectile(
         float x, float z, float dirX, float dirZ,
-        float speed, int damage, float range, Color color)
+        float speed, int damage, float range,
+        int colorIdx, int ownerPeerId)
     {
         if (_projCount >= MaxProjectiles) return;
 
@@ -94,9 +85,11 @@ public partial class ProjectileManager : Node3D
         _dirZ[i] = dirZ;
         _speed[i] = speed;
         _damage[i] = damage;
-        _distanceTraveled[i] = 0f;
-        _maxRange[i] = range;
-        _projColor[i] = color;
+        _lifetime[i] = ProjectileLifetimeCalculator.ComputeInitialLifetime(range, speed);
+        _ownerId[i] = ownerPeerId;
+        _colorIdx[i] = colorIdx;
+        _projectileId[i] = _nextProjectileId++;
+        if (_nextProjectileId == 0) _nextProjectileId = 1;
         _projCount++;
     }
 
@@ -123,34 +116,61 @@ public partial class ProjectileManager : Node3D
 
     public override void _Process(double delta)
     {
-        float dt = (float)delta;
-        UpdateProjectiles(dt);
-        UploadProjectiles();
-        UploadOrbitals();
+        if (GameState?.IsGameOver == true)
+        {
+            // Pure-calculator decision; idempotent so repeat ticks are safe.
+            var plan = GameOverCleanupCalculator.Compute(
+                liveEnemyCount: 0,
+                liveProjectileCount: _projCount,
+                queuedWaveCount: 0,
+                isGameOver: true);
+            if (plan.ClearProjectiles) ClearAllProjectiles();
+            _renderer?.UpdateInstances(_projX, _projZ, _dirX, _dirZ, _lifetime, _ownerId, _colorIdx, _projCount);
+            return;
+        }
+
+        var (newAcc, ticks) = TickAccumulator.Advance(_simAccumulator, (float)delta);
+        _simAccumulator = newAcc;
+
+        const float dt = TickAccumulator.DefaultFixedTimeStep;
+        for (int t = 0; t < ticks; t++)
+        {
+            UpdateProjectiles(dt);
+        }
+
+        _renderer?.UpdateInstances(_projX, _projZ, _dirX, _dirZ, _lifetime, _ownerId, _colorIdx, _projCount);
     }
 
     private void UpdateProjectiles(float dt)
     {
-        float hitRadius = 0.8f;
+        float hitRadius = ProjectileLifetimeCalculator.DefaultHitRadius;
 
         for (int i = _projCount - 1; i >= 0; i--)
         {
-            float move = _speed[i] * dt;
-            _projX[i] += _dirX[i] * move;
-            _projZ[i] += _dirZ[i] * move;
-            _distanceTraveled[i] += move;
+            var (nx, nz) = ProjectileLifetimeCalculator.Step(_projX[i], _projZ[i], _dirX[i], _dirZ[i], _speed[i], dt);
+            _projX[i] = nx;
+            _projZ[i] = nz;
+            _lifetime[i] = ProjectileLifetimeCalculator.TickLifetime(_lifetime[i], dt);
 
-            if (_distanceTraveled[i] >= _maxRange[i])
+            if (ProjectileLifetimeCalculator.IsLifetimeExpired(_lifetime[i]))
             {
                 RemoveProjectile(i);
                 continue;
             }
 
-            if (_swarmManager != null)
+            if (_swarmManager != null
+                && _swarmManager.TryDamageFirstInRadius(
+                    _projX[i], _projZ[i], hitRadius, _damage[i], out _, out _))
             {
-                _swarmManager.DamageInRadius(_projX[i], _projZ[i], hitRadius, _damage[i]);
+                RemoveProjectile(i);
             }
         }
+    }
+
+    // Drops every in-flight projectile. Backing arrays stay allocated.
+    public void ClearAllProjectiles()
+    {
+        _projCount = 0;
     }
 
     private void RemoveProjectile(int index)
@@ -164,48 +184,11 @@ public partial class ProjectileManager : Node3D
             _dirZ[index] = _dirZ[last];
             _speed[index] = _speed[last];
             _damage[index] = _damage[last];
-            _distanceTraveled[index] = _distanceTraveled[last];
-            _maxRange[index] = _maxRange[last];
-            _projColor[index] = _projColor[last];
+            _lifetime[index] = _lifetime[last];
+            _ownerId[index] = _ownerId[last];
+            _colorIdx[index] = _colorIdx[last];
+            _projectileId[index] = _projectileId[last];
         }
         _projCount--;
-    }
-
-    private void UploadProjectiles()
-    {
-        if (_projRenderer?.Multimesh == null) return;
-
-        _projRenderer.Multimesh.VisibleInstanceCount = _projCount;
-
-        for (int i = 0; i < _projCount; i++)
-        {
-            var transform = Transform3D.Identity;
-            transform.Origin = new Vector3(_projX[i], 0.5f, _projZ[i]);
-
-            float angle = Mathf.Atan2(_dirX[i], _dirZ[i]);
-            transform.Basis = Basis.Identity.Rotated(Vector3.Up, angle);
-
-            _projRenderer.Multimesh.SetInstanceTransform(i, transform);
-            _projRenderer.Multimesh.SetInstanceColor(i, _projColor[i]);
-            _projRenderer.Multimesh.SetInstanceCustomData(i,
-                new Color(_dirX[i], _dirZ[i], 0f, 0f));
-        }
-    }
-
-    private void UploadOrbitals()
-    {
-        if (_orbRenderer?.Multimesh == null) return;
-
-        _orbRenderer.Multimesh.VisibleInstanceCount = _orbCount;
-
-        for (int i = 0; i < _orbCount; i++)
-        {
-            var transform = Transform3D.Identity;
-            transform.Origin = new Vector3(_orbX[i], 0.5f, _orbZ[i]);
-            _orbRenderer.Multimesh.SetInstanceTransform(i, transform);
-            _orbRenderer.Multimesh.SetInstanceColor(i, _orbColor[i]);
-            _orbRenderer.Multimesh.SetInstanceCustomData(i,
-                new Color(0f, 0f, 0f, 0f));
-        }
     }
 }

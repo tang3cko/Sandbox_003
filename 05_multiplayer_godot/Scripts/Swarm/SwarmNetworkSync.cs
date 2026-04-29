@@ -9,9 +9,9 @@ public partial class SwarmNetworkSync : Node
 
     [Export] public WaveConfig WaveConfig { get; set; }
 
-    private bool _isServer;
     private float _accumulator;
-    private byte[] _sendBuffer = new byte[SwarmSnapshot.CalculateBufferSize(MaxEntities)];
+
+    private bool IsServer => Multiplayer.MultiplayerPeer != null && Multiplayer.IsServer();
 
     private SwarmManager _swarmManager;
     private SwarmRenderer _clientRenderer;
@@ -23,6 +23,8 @@ public partial class SwarmNetworkSync : Node
     private readonly int[] _typeIndex = new int[MaxEntities];
     private readonly float[] _flashTimer = new float[MaxEntities];
     private readonly float[] _deathTimer = new float[MaxEntities];
+    private readonly int[] _entityId = new int[MaxEntities];
+    private readonly int[] _previousEntityId = new int[MaxEntities];
     private int _activeCount;
     private int _snapshotsReceived;
 
@@ -30,6 +32,9 @@ public partial class SwarmNetworkSync : Node
     private readonly float[] _renderPosZ = new float[MaxEntities];
     private readonly float[] _startPosX = new float[MaxEntities];
     private readonly float[] _startPosZ = new float[MaxEntities];
+    private readonly float[] _oldRenderPosX = new float[MaxEntities];
+    private readonly float[] _oldRenderPosZ = new float[MaxEntities];
+    private readonly int[] _oldEntityId = new int[MaxEntities];
     private float _interpolationElapsed;
     private int _previousActiveCount;
 
@@ -38,17 +43,16 @@ public partial class SwarmNetworkSync : Node
 
     public override void _Ready()
     {
-        _isServer = Multiplayer.MultiplayerPeer != null && Multiplayer.IsServer();
-        if (_isServer)
+        if (IsServer)
         {
             _swarmManager = GetParent().GetNodeOrNull<SwarmManager>("SwarmManager");
             if (_swarmManager == null)
             {
-                GD.PrintErr("[SwarmNetworkSync] Server-side SwarmManager not found at expected path");
+                NetLog.Error("[SwarmNetworkSync] Server-side SwarmManager not found at expected path");
             }
             else
             {
-                GD.Print("[SwarmNetworkSync] Server broadcaster ready");
+                NetLog.Info("[SwarmNetworkSync] Server broadcaster ready");
             }
         }
         else
@@ -56,18 +60,18 @@ public partial class SwarmNetworkSync : Node
             _clientRenderer = GetNodeOrNull<SwarmRenderer>("SwarmRenderer");
             if (_clientRenderer == null)
             {
-                GD.PrintErr("[SwarmNetworkSync] Client-side SwarmRenderer child missing");
+                NetLog.Error("[SwarmNetworkSync] Client-side SwarmRenderer child missing");
             }
             else
             {
-                GD.Print("[SwarmNetworkSync] Client receiver ready");
+                NetLog.Info("[SwarmNetworkSync] Client receiver ready");
             }
         }
     }
 
     public override void _Process(double delta)
     {
-        if (_isServer)
+        if (IsServer)
         {
             if (_swarmManager == null) return;
             _accumulator += (float)delta;
@@ -80,13 +84,12 @@ public partial class SwarmNetworkSync : Node
             if (_clientRenderer == null || WaveConfig?.EnemyTypes == null) return;
 
             _interpolationElapsed += (float)delta;
-            float t = NetworkConfig.SnapshotInterval > 0f
-                ? Mathf.Clamp(_interpolationElapsed / NetworkConfig.SnapshotInterval, 0f, 1f)
-                : 1f;
+            float t = InterpolationStartCalculator.ComputeAlpha(
+                _interpolationElapsed, NetworkConfig.SnapshotInterval);
             for (int i = 0; i < _activeCount; i++)
             {
-                _renderPosX[i] = _startPosX[i] + (_posX[i] - _startPosX[i]) * t;
-                _renderPosZ[i] = _startPosZ[i] + (_posZ[i] - _startPosZ[i]) * t;
+                _renderPosX[i] = InterpolationStartCalculator.Lerp(_startPosX[i], _posX[i], t);
+                _renderPosZ[i] = InterpolationStartCalculator.Lerp(_startPosZ[i], _posZ[i], t);
             }
 
             _clientRenderer.UpdateInstances(
@@ -100,17 +103,13 @@ public partial class SwarmNetworkSync : Node
     {
         _swarmManager.GetSoAReference(
             out var posX, out var posZ, out var velX, out var velZ,
-            out var typeIndex, out var flashTimer, out var deathTimer);
+            out var typeIndex, out var flashTimer, out var deathTimer, out var entityId);
 
         int count = _swarmManager.ActiveCount;
         int needed = SwarmSnapshot.CalculateBufferSize(count);
-        if (_sendBuffer.Length < needed) _sendBuffer = new byte[needed];
-
-        SwarmSnapshot.Encode(_sendBuffer, posX, posZ, velX, velZ,
-            typeIndex, flashTimer, deathTimer, count);
-
         var packet = new byte[needed];
-        Array.Copy(_sendBuffer, packet, needed);
+        SwarmSnapshot.Encode(packet, posX, posZ, velX, velZ,
+            typeIndex, flashTimer, deathTimer, entityId, count);
         Rpc(MethodName.ApplySnapshot, packet);
     }
 
@@ -120,16 +119,27 @@ public partial class SwarmNetworkSync : Node
          TransferChannel = NetworkConfig.ChannelSwarm)]
     private void ApplySnapshot(byte[] data)
     {
+        Array.Copy(_renderPosX, _oldRenderPosX, _previousActiveCount);
+        Array.Copy(_renderPosZ, _oldRenderPosZ, _previousActiveCount);
+        Array.Copy(_previousEntityId, _oldEntityId, _previousActiveCount);
+        int oldCount = _previousActiveCount;
+
         int newCount = SwarmSnapshot.Decode(data, data.Length,
             _posX, _posZ, _velX, _velZ,
-            _typeIndex, _flashTimer, _deathTimer);
+            _typeIndex, _flashTimer, _deathTimer, _entityId);
 
         for (int i = 0; i < newCount; i++)
         {
-            if (i < _previousActiveCount)
+            int id = _entityId[i];
+            int oldIdx = -1;
+            for (int j = 0; j < oldCount; j++)
             {
-                _startPosX[i] = _renderPosX[i];
-                _startPosZ[i] = _renderPosZ[i];
+                if (_oldEntityId[j] == id) { oldIdx = j; break; }
+            }
+            if (oldIdx >= 0)
+            {
+                _startPosX[i] = _oldRenderPosX[oldIdx];
+                _startPosZ[i] = _oldRenderPosZ[oldIdx];
             }
             else
             {
@@ -140,6 +150,7 @@ public partial class SwarmNetworkSync : Node
             }
         }
 
+        Array.Copy(_entityId, _previousEntityId, newCount);
         _previousActiveCount = newCount;
         _activeCount = newCount;
         _interpolationElapsed = 0f;

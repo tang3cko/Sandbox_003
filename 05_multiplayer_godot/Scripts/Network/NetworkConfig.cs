@@ -14,4 +14,5 @@ public static class NetworkConfig
     public const int ChannelSwarm = 1;
     public const int ChannelPlayer = 2;
     public const int ChannelInput = 3;
+    public const int ChannelProjectile = 4;
 }

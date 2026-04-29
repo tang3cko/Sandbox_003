@@ -9,7 +9,6 @@ public partial class LobbyScreen : Control
     private Label _statusLabel;
     private Button _hostButton;
     private Button _joinButton;
-    private Button _singlePlayerButton;
 
     public override void _Ready()
     {
@@ -69,9 +68,6 @@ public partial class LobbyScreen : Control
         _joinButton = BuildButton("Join", OnJoinPressed);
         vbox.AddChild(_joinButton);
 
-        _singlePlayerButton = BuildButton("Single Player (legacy)", OnSinglePlayerPressed);
-        vbox.AddChild(_singlePlayerButton);
-
         _statusLabel = new Label { Text = "" };
         _statusLabel.AddThemeFontSizeOverride("font_size", 24);
         _statusLabel.HorizontalAlignment = HorizontalAlignment.Center;
@@ -126,11 +122,6 @@ public partial class LobbyScreen : Control
         {
             SetStatus($"Failed: {error}");
         }
-    }
-
-    private void OnSinglePlayerPressed()
-    {
-        GetTree().ChangeSceneToFile("res://Scenes/Main.tscn");
     }
 
     private int ParsePort()

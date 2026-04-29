@@ -15,6 +15,7 @@ A sandbox project for learning Godot 4.6 with C#.
 | `03_action_in_godot/` | 4 | 3D action game. Physics, Navigation, Animation, Audio, Particles, Scene management |
 | `04_shaders_in_godot/` | 5 | GDShader, MultiMesh, CompositorEffect |
 | `05_multiplayer_godot/` | 6 | ENet, RPC, Server Authority (optional: Steam) |
+| `06_escape_room_godot/` | 7 | Escape room / walking simulator. Interaction system, Inventory, Puzzle, Trigger + Signal architecture |
 
 ---
 
@@ -28,7 +29,7 @@ A sandbox project for learning Godot 4.6 with C#.
 | **4** | Core Godot systems -- Physics, Navigation, Animation, Audio, Particles, Scene management |
 | **5** | 3D / Rendering -- GDShader, MultiMesh, CompositorEffect |
 | **6** | Multiplayer -- ENet, Server Authority, Steam |
-| **7** | Production project |
+| **7** | Escape room -- Interaction system, Trigger + Signal, Inventory, Puzzle, UI |
 
 ---
 
@@ -66,7 +67,9 @@ Sandbox_003/
 │   └── project.godot
 ├── 04_shaders_in_godot/    # Phase 5
 │   └── project.godot
-└── 05_multiplayer_godot/   # Phase 6
+├── 05_multiplayer_godot/   # Phase 6
+│   └── project.godot
+└── 06_escape_room_godot/   # Phase 7
     └── project.godot
 ```
 

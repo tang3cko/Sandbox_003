@@ -5,8 +5,11 @@ using System.Buffers.Binary;
 
 public static class SwarmSnapshot
 {
-    public const int HeaderSize = 2;
-    public const int EntitySize = 22;
+    public const byte Version = 1;
+    public const int HeaderSize = 3;
+    public const int VersionOffset = 0;
+    public const int CountOffset = 1;
+    public const int EntitySize = 24;
 
     public const int MaxCount = ushort.MaxValue;
 
@@ -19,6 +22,7 @@ public static class SwarmSnapshot
         int[] typeIndex,
         float[] flashTimer,
         float[] deathTimer,
+        int[] entityId,
         int count)
     {
         if (count < 0 || count > MaxCount)
@@ -27,7 +31,8 @@ public static class SwarmSnapshot
         if (buffer.Length < needed)
             throw new ArgumentException("Buffer too small for snapshot", nameof(buffer));
 
-        BinaryPrimitives.WriteUInt16LittleEndian(buffer.AsSpan(0, 2), (ushort)count);
+        buffer[VersionOffset] = Version;
+        BinaryPrimitives.WriteUInt16LittleEndian(buffer.AsSpan(CountOffset, 2), (ushort)count);
 
         int offset = HeaderSize;
         for (int i = 0; i < count; i++)
@@ -39,6 +44,7 @@ public static class SwarmSnapshot
             buffer[offset + 16] = (byte)(typeIndex[i] & 0xFF);
             buffer[offset + 17] = EncodeFlashTimer(flashTimer[i]);
             BinaryPrimitives.WriteSingleLittleEndian(buffer.AsSpan(offset + 18, 4), deathTimer[i]);
+            BinaryPrimitives.WriteUInt16LittleEndian(buffer.AsSpan(offset + 22, 2), (ushort)(entityId[i] & 0xFFFF));
             offset += EntitySize;
         }
         return offset;
@@ -50,11 +56,13 @@ public static class SwarmSnapshot
         float[] velX, float[] velZ,
         int[] typeIndex,
         float[] flashTimer,
-        float[] deathTimer)
+        float[] deathTimer,
+        int[] entityId)
     {
         if (byteCount < HeaderSize) return 0;
+        if (buffer[VersionOffset] != Version) return 0;
 
-        int count = BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(0, 2));
+        int count = BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(CountOffset, 2));
         int expected = CalculateBufferSize(count);
         if (byteCount < expected) return 0;
 
@@ -69,6 +77,7 @@ public static class SwarmSnapshot
             typeIndex[i] = buffer[offset + 16];
             flashTimer[i] = DecodeFlashTimer(buffer[offset + 17]);
             deathTimer[i] = BinaryPrimitives.ReadSingleLittleEndian(buffer.AsSpan(offset + 18, 4));
+            entityId[i] = BinaryPrimitives.ReadUInt16LittleEndian(buffer.AsSpan(offset + 22, 2));
             offset += EntitySize;
         }
         return max;

@@ -49,12 +49,12 @@ public partial class NetworkManager : Node
         var error = peer.CreateServer(port, maxClients);
         if (error != Error.Ok)
         {
-            GD.PrintErr($"[NetworkManager] Failed to create server on port {port}: {error}");
+            NetLog.Error($"[NetworkManager] Failed to create server on port {port}: {error}");
             return error;
         }
 
         Multiplayer.MultiplayerPeer = peer;
-        GD.Print($"[NetworkManager] Server started on port {port} (max clients: {maxClients})");
+        NetLog.Info($"[NetworkManager] Server started on port {port} (max clients: {maxClients})");
         EmitSignal(SignalName.ServerStarted);
         return Error.Ok;
     }
@@ -65,12 +65,12 @@ public partial class NetworkManager : Node
         var error = peer.CreateClient(address, port);
         if (error != Error.Ok)
         {
-            GD.PrintErr($"[NetworkManager] Failed to create client to {address}:{port}: {error}");
+            NetLog.Error($"[NetworkManager] Failed to create client to {address}:{port}: {error}");
             return error;
         }
 
         Multiplayer.MultiplayerPeer = peer;
-        GD.Print($"[NetworkManager] Connecting to {address}:{port}...");
+        NetLog.Info($"[NetworkManager] Connecting to {address}:{port}...");
         return Error.Ok;
     }
 
@@ -80,13 +80,13 @@ public partial class NetworkManager : Node
         {
             Multiplayer.MultiplayerPeer.Close();
             Multiplayer.MultiplayerPeer = null;
-            GD.Print("[NetworkManager] Disconnected");
+            NetLog.Info("[NetworkManager] Disconnected");
         }
     }
 
     private void StartHeadlessServer()
     {
-        GD.Print("[NetworkManager] Headless mode detected, starting dedicated server");
+        NetLog.Info("[NetworkManager] Headless mode detected, starting dedicated server");
         var error = StartServer();
         if (error != Error.Ok) return;
 
@@ -95,32 +95,32 @@ public partial class NetworkManager : Node
 
     private void OnPeerConnected(long peerId)
     {
-        GD.Print($"[NetworkManager] Peer joined: {peerId}");
+        NetLog.Info($"[NetworkManager] Peer joined: {peerId}");
         EmitSignal(SignalName.PeerJoined, peerId);
     }
 
     private void OnPeerDisconnected(long peerId)
     {
-        GD.Print($"[NetworkManager] Peer left: {peerId}");
+        NetLog.Info($"[NetworkManager] Peer left: {peerId}");
         EmitSignal(SignalName.PeerLeft, peerId);
     }
 
     private void OnConnectedToServer()
     {
-        GD.Print("[NetworkManager] Connected to server");
+        NetLog.Info("[NetworkManager] Connected to server");
         EmitSignal(SignalName.ClientConnected);
     }
 
     private void OnConnectionFailed()
     {
-        GD.PrintErr("[NetworkManager] Connection failed");
+        NetLog.Error("[NetworkManager] Connection failed");
         Multiplayer.MultiplayerPeer = null;
         EmitSignal(SignalName.ConnectionFailed);
     }
 
     private void OnServerDisconnected()
     {
-        GD.Print("[NetworkManager] Server disconnected");
+        NetLog.Info("[NetworkManager] Server disconnected");
         Multiplayer.MultiplayerPeer = null;
         EmitSignal(SignalName.ServerDisconnected);
     }

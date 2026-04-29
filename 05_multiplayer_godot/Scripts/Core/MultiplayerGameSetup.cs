@@ -1,5 +1,6 @@
 namespace SwarmSurvivor;
 
+using System.Collections.Generic;
 using Godot;
 
 public partial class MultiplayerGameSetup : Node3D
@@ -13,6 +14,7 @@ public partial class MultiplayerGameSetup : Node3D
 
     private SwarmManager _swarmManager;
     private SwarmSpawner _swarmSpawner;
+    private ProjectileManager _projectileManager;
     private GameStateSync _gameState;
     private MultiplayerHUD _hud;
 
@@ -28,14 +30,14 @@ public partial class MultiplayerGameSetup : Node3D
 
         if (NetworkManager.Instance == null)
         {
-            GD.PrintErr("[MultiplayerGameSetup] NetworkManager autoload missing");
+            NetLog.Error("[MultiplayerGameSetup] NetworkManager autoload missing");
             return;
         }
 
         var waveConfig = GD.Load<WaveConfig>(WaveConfigPath);
         if (waveConfig == null)
         {
-            GD.PrintErr($"[MultiplayerGameSetup] Failed to load WaveConfig at {WaveConfigPath}");
+            NetLog.Error($"[MultiplayerGameSetup] Failed to load WaveConfig at {WaveConfigPath}");
         }
 
         if (NetworkManager.Instance.IsServer)
@@ -44,6 +46,7 @@ public partial class MultiplayerGameSetup : Node3D
             NetworkManager.Instance.PeerLeft += OnPeerLeft;
 
             if (waveConfig != null) SetupServerSwarm(waveConfig);
+            SetupServerProjectiles();
 
             SpawnPlayer(NetworkConfig.ServerPeerId);
             foreach (var peerId in Multiplayer.GetPeers())
@@ -54,6 +57,7 @@ public partial class MultiplayerGameSetup : Node3D
         else
         {
             if (waveConfig != null) SetupClientSwarm(waveConfig);
+            SetupClientProjectiles();
         }
 
         SetupHUD();
@@ -72,7 +76,7 @@ public partial class MultiplayerGameSetup : Node3D
 
     private void SetupServerSwarm(WaveConfig waveConfig)
     {
-        _swarmManager = new SwarmManager { Name = "SwarmManager", WaveConfig = waveConfig };
+        _swarmManager = new SwarmManager { Name = "SwarmManager", WaveConfig = waveConfig, GameState = _gameState };
         var renderer = new SwarmRenderer { Name = "SwarmRenderer" };
         _swarmManager.AddChild(renderer);
         AddChild(_swarmManager);
@@ -89,7 +93,7 @@ public partial class MultiplayerGameSetup : Node3D
         var sync = new SwarmNetworkSync { Name = "SwarmNetworkSync", WaveConfig = waveConfig };
         AddChild(sync);
 
-        GD.Print("[MultiplayerGameSetup] Server swarm initialized (Press Enter to start spawning).");
+        NetLog.Info("[MultiplayerGameSetup] Server swarm initialized (Press Enter to start spawning).");
     }
 
     private void SetupGameState()
@@ -116,7 +120,30 @@ public partial class MultiplayerGameSetup : Node3D
         sync.AddChild(renderer);
         AddChild(sync);
 
-        GD.Print("[MultiplayerGameSetup] Client swarm receiver initialized.");
+        NetLog.Info("[MultiplayerGameSetup] Client swarm receiver initialized.");
+    }
+
+    private void SetupServerProjectiles()
+    {
+        _projectileManager = new ProjectileManager { Name = "ProjectileManager", GameState = _gameState };
+        var renderer = new ProjectileRenderer { Name = "ProjectileRenderer" };
+        _projectileManager.AddChild(renderer);
+        AddChild(_projectileManager);
+
+        var sync = new ProjectileNetworkSync { Name = "ProjectileNetworkSync" };
+        AddChild(sync);
+
+        NetLog.Info("[MultiplayerGameSetup] Server projectiles initialized.");
+    }
+
+    private void SetupClientProjectiles()
+    {
+        var sync = new ProjectileNetworkSync { Name = "ProjectileNetworkSync" };
+        var renderer = new ProjectileRenderer { Name = "ProjectileRenderer" };
+        sync.AddChild(renderer);
+        AddChild(sync);
+
+        NetLog.Info("[MultiplayerGameSetup] Client projectile receiver initialized.");
     }
 
     public override void _ExitTree()
@@ -147,18 +174,24 @@ public partial class MultiplayerGameSetup : Node3D
 
         _swarmManager?.UnregisterTarget(player);
         player.QueueFree();
-        GD.Print($"[MultiplayerGameSetup] Player removed: peer={peerId}");
+        NetLog.Info($"[MultiplayerGameSetup] Player removed: peer={peerId}");
+
+        if (Multiplayer.MultiplayerPeer != null && Multiplayer.IsServer() && AreAllPlayersDead())
+        {
+            NetLog.Info("[MultiplayerGameSetup] All players gone — triggering game over");
+            _swarmSpawner?.HandlePlayerDefeated();
+        }
     }
 
     private void SpawnPlayer(long peerId)
     {
         if (_playersContainer.HasNode(peerId.ToString()))
         {
-            GD.Print($"[MultiplayerGameSetup] Skip spawn (already exists): peer={peerId}");
+            NetLog.Info($"[MultiplayerGameSetup] Skip spawn (already exists): peer={peerId}");
             return;
         }
 
-        GD.Print($"[MultiplayerGameSetup] Requesting spawn: peer={peerId}");
+        NetLog.Info($"[MultiplayerGameSetup] Requesting spawn: peer={peerId}");
         var spawned = _spawner.Spawn((int)peerId);
 
         if (spawned is NetworkedPlayer player)
@@ -168,7 +201,7 @@ public partial class MultiplayerGameSetup : Node3D
             {
                 player.PlayerDied += OnPlayerDied;
             }
-            GD.Print($"[MultiplayerGameSetup] Swarm target registered: peer={peerId}");
+            NetLog.Info($"[MultiplayerGameSetup] Swarm target registered: peer={peerId}");
         }
     }
 
@@ -176,7 +209,32 @@ public partial class MultiplayerGameSetup : Node3D
     {
         var player = _playersContainer.GetNodeOrNull<Node3D>(peerId.ToString());
         if (player != null) _swarmManager?.UnregisterTarget(player);
-        GD.Print($"[MultiplayerGameSetup] Player died, unregistered: peer={peerId}");
+        NetLog.Info($"[MultiplayerGameSetup] Player died, unregistered: peer={peerId}");
+
+        if (Multiplayer.MultiplayerPeer == null) return;
+        if (!Multiplayer.IsServer()) return;
+
+        if (AreAllPlayersDead())
+        {
+            NetLog.Info("[MultiplayerGameSetup] All players dead — triggering game over");
+            _swarmSpawner?.HandlePlayerDefeated();
+        }
+    }
+
+    private bool AreAllPlayersDead()
+    {
+        return PlayerLifecycleCalculator.AreAllPlayersDead(EnumeratePlayerStates());
+    }
+
+    private IEnumerable<(bool IsDead, bool IsQueuedForDeletion)> EnumeratePlayerStates()
+    {
+        foreach (var child in _playersContainer.GetChildren())
+        {
+            if (child is NetworkedPlayer p)
+            {
+                yield return (p.IsDead, p.IsQueuedForDeletion());
+            }
+        }
     }
 
     private NetworkedPlayer OnSpawnPlayer(Variant data)
@@ -193,15 +251,25 @@ public partial class MultiplayerGameSetup : Node3D
 
         player.Position = spawnPos;
 
-        GD.Print($"[MultiplayerGameSetup] SpawnFunction: peer={peerId} authority set, pos={spawnPos}");
+        // PlayerWeaponSystem must exist on every peer so the OnWeaponFired RPC
+        // resolves to a matching node path. Fire logic gates itself to server-only.
+        var weaponSystem = new PlayerWeaponSystem { Name = "WeaponSystem" };
+        if (Multiplayer.MultiplayerPeer != null && Multiplayer.IsServer())
+        {
+            weaponSystem.ProjectileManager = _projectileManager;
+            weaponSystem.SwarmManager = _swarmManager;
+            weaponSystem.StartingWeapon = GD.Load<WeaponConfig>("res://Resources/Weapons/projectile_weapon.tres");
+        }
+        player.AddChild(weaponSystem);
+
+        NetLog.Info($"[MultiplayerGameSetup] SpawnFunction: peer={peerId} authority set, pos={spawnPos}");
         return player;
     }
 
     private static Vector3 GetSpawnPosition(long peerId)
     {
-        var index = peerId == NetworkConfig.ServerPeerId ? 0 : (int)(peerId % 8);
-        var angle = index * Mathf.Tau / 8f;
-        return new Vector3(Mathf.Cos(angle) * 4f, 0f, Mathf.Sin(angle) * 4f);
+        var (x, z) = SpawnPositionCalculator.ComputePlayerSpawnPosition(peerId, NetworkConfig.ServerPeerId);
+        return new Vector3(x, 0f, z);
     }
 
     private void SetupArena()

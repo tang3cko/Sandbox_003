@@ -29,6 +29,9 @@ public partial class SwarmSpawner : Node3D
         _waveState = WaveCalculator.CreateInitial();
         _rng = new Random();
 
+        _onEnemyKilled ??= GD.Load<VoidEventChannel>("res://Resources/Events/on_enemy_killed.tres");
+        _onWaveCompleted ??= GD.Load<VoidEventChannel>("res://Resources/Events/on_wave_completed.tres");
+
         if (_onEnemyKilled != null)
         {
             _onEnemyKilled.Raised += HandleEnemyKilled;
@@ -37,11 +40,11 @@ public partial class SwarmSpawner : Node3D
         if (AutoStart)
         {
             _waitingForNextWave = true;
-            _waveDelayTimer = 1f;
+            _waveDelayTimer = WaveCalculator.InitialWaveDelay;
         }
 
-        GD.Print($"[SwarmSpawner] _Ready: AutoStart={AutoStart}, WaveConfig={WaveConfig != null}, SwarmManager={_swarmManager != null}, EnemyKilled={_onEnemyKilled != null}");
-        GD.Print($"[SwarmSpawner] EnemyTypes={WaveConfig?.EnemyTypes?.Length ?? -1}, BaseCount={WaveConfig?.BaseEnemyCount ?? -1}");
+        NetLog.Info($"[SwarmSpawner] _Ready: AutoStart={AutoStart}, WaveConfig={WaveConfig != null}, SwarmManager={_swarmManager != null}, EnemyKilled={_onEnemyKilled != null}");
+        NetLog.Info($"[SwarmSpawner] EnemyTypes={WaveConfig?.EnemyTypes?.Length ?? -1}, BaseCount={WaveConfig?.BaseEnemyCount ?? -1}");
 
         GameState?.ApplyWaveState(_waveState);
     }
@@ -50,8 +53,8 @@ public partial class SwarmSpawner : Node3D
     {
         if (_waveState.IsWaveActive || _waitingForNextWave) return;
         _waitingForNextWave = true;
-        _waveDelayTimer = 0.5f;
-        GD.Print("[SwarmSpawner] StartSpawning requested");
+        _waveDelayTimer = WaveCalculator.StartSpawningDelay;
+        NetLog.Info("[SwarmSpawner] StartSpawning requested");
     }
 
     private void HandleEnemyKilled()
@@ -70,7 +73,7 @@ public partial class SwarmSpawner : Node3D
             }
 
             _waitingForNextWave = true;
-            _waveDelayTimer = WaveConfig?.TimeBetweenWaves ?? 3f;
+            _waveDelayTimer = WaveConfig?.TimeBetweenWaves ?? WaveCalculator.DefaultTimeBetweenWaves;
         }
 
         GameState?.ApplyWaveState(_waveState);
@@ -114,7 +117,7 @@ public partial class SwarmSpawner : Node3D
         _spawnTimer = 0f;
 
         if (_waveNumber != null) _waveNumber.Value = _waveState.WaveNumber;
-        GD.Print($"[SwarmSpawner] StartNextWave: wave={_waveState.WaveNumber}, total={_waveState.TotalEnemiesInWave}");
+        NetLog.Info($"[SwarmSpawner] StartNextWave: wave={_waveState.WaveNumber}, total={_waveState.TotalEnemiesInWave}");
 
         GameState?.ApplyWaveState(_waveState);
     }
@@ -124,7 +127,7 @@ public partial class SwarmSpawner : Node3D
         int typeCount = WaveConfig.EnemyTypes?.Length ?? 0;
         if (typeCount == 0)
         {
-            GD.PrintErr($"[SwarmSpawner] SpawnOneEnemy FAILED: EnemyTypes is null or empty (typeCount={typeCount})");
+            NetLog.Error($"[SwarmSpawner] SpawnOneEnemy FAILED: EnemyTypes is null or empty (typeCount={typeCount})");
             return;
         }
 
@@ -137,14 +140,10 @@ public partial class SwarmSpawner : Node3D
 
     private Vector3 GetRandomSpawnPosition()
     {
-        float angle = (float)(_rng.NextDouble() * Math.PI * 2);
-        float dist = WaveConfig.SpawnDistanceMin +
-            (float)_rng.NextDouble() * (WaveConfig.SpawnDistanceMax - WaveConfig.SpawnDistanceMin);
-
-        return new Vector3(
-            MathF.Cos(angle) * dist,
-            0f,
-            MathF.Sin(angle) * dist);
+        var (x, z) = SpawnPositionCalculator.ComputeRandomSpawnPosition(
+            _rng.NextDouble(), _rng.NextDouble(),
+            WaveConfig.SpawnDistanceMin, WaveConfig.SpawnDistanceMax);
+        return new Vector3(x, 0f, z);
     }
 
     public void HandlePlayerDefeated()

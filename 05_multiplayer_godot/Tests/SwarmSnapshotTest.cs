@@ -9,34 +9,34 @@ public class SwarmSnapshotTest
     [Fact]
     public void CalculateBufferSize_Zero_ReturnsHeaderOnly()
     {
-        Assert.Equal(2, SwarmSnapshot.CalculateBufferSize(0));
+        Assert.Equal(3, SwarmSnapshot.CalculateBufferSize(0));
     }
 
     [Fact]
     public void CalculateBufferSize_Linear()
     {
-        Assert.Equal(2 + 22, SwarmSnapshot.CalculateBufferSize(1));
-        Assert.Equal(2 + 22 * 500, SwarmSnapshot.CalculateBufferSize(500));
+        Assert.Equal(3 + 24, SwarmSnapshot.CalculateBufferSize(1));
+        Assert.Equal(3 + 24 * 500, SwarmSnapshot.CalculateBufferSize(500));
     }
 
     [Fact]
     public void RoundTrip_EmptySnapshot_DecodesToZero()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
         var buf = new byte[SwarmSnapshot.CalculateBufferSize(0)];
 
-        int written = SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, 0);
-        Assert.Equal(2, written);
+        int written = SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 0);
+        Assert.Equal(3, written);
 
-        var (px2, pz2, vx2, vz2, tx2, ft2, dt2) = AllocSoA(Capacity);
-        int decoded = SwarmSnapshot.Decode(buf, written, px2, pz2, vx2, vz2, tx2, ft2, dt2);
+        var (px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2) = AllocSoA(Capacity);
+        int decoded = SwarmSnapshot.Decode(buf, written, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
         Assert.Equal(0, decoded);
     }
 
     [Fact]
     public void RoundTrip_SingleEntity_PreservesAllFields()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
         px[0] = 12.5f;
         pz[0] = -7.25f;
         vx[0] = 1.5f;
@@ -46,10 +46,10 @@ public class SwarmSnapshotTest
         dt[0] = SwarmCalculator.AliveMarker;
 
         var buf = new byte[SwarmSnapshot.CalculateBufferSize(1)];
-        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, 1);
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 1);
 
-        var (px2, pz2, vx2, vz2, tx2, ft2, dt2) = AllocSoA(Capacity);
-        int decoded = SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2);
+        var (px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2) = AllocSoA(Capacity);
+        int decoded = SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
 
         Assert.Equal(1, decoded);
         Assert.Equal(12.5f, px2[0]);
@@ -65,7 +65,7 @@ public class SwarmSnapshotTest
     public void RoundTrip_MultipleEntities_PreservesAllValues()
     {
         const int N = 16;
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
         for (int i = 0; i < N; i++)
         {
             px[i] = i * 1.5f;
@@ -78,10 +78,10 @@ public class SwarmSnapshotTest
         }
 
         var buf = new byte[SwarmSnapshot.CalculateBufferSize(N)];
-        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, N);
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, N);
 
-        var (px2, pz2, vx2, vz2, tx2, ft2, dt2) = AllocSoA(Capacity);
-        int decoded = SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2);
+        var (px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2) = AllocSoA(Capacity);
+        int decoded = SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
 
         Assert.Equal(N, decoded);
         for (int i = 0; i < N; i++)
@@ -99,27 +99,28 @@ public class SwarmSnapshotTest
     [Fact]
     public void Decode_BufferSmallerThanHeader_ReturnsZero()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
-        Assert.Equal(0, SwarmSnapshot.Decode(new byte[1], 1, px, pz, vx, vz, tx, ft, dt));
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
+        Assert.Equal(0, SwarmSnapshot.Decode(new byte[1], 1, px, pz, vx, vz, tx, ft, dt, eid));
+        Assert.Equal(0, SwarmSnapshot.Decode(new byte[2], 2, px, pz, vx, vz, tx, ft, dt, eid));
     }
 
     [Fact]
     public void Decode_BufferSmallerThanExpected_ReturnsZero()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
-        var buf = new byte[2];
-        buf[0] = 1; buf[1] = 0;
-        Assert.Equal(0, SwarmSnapshot.Decode(buf, buf.Length, px, pz, vx, vz, tx, ft, dt));
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
+        var buf = new byte[3];
+        buf[0] = SwarmSnapshot.Version; buf[1] = 1; buf[2] = 0;
+        Assert.Equal(0, SwarmSnapshot.Decode(buf, buf.Length, px, pz, vx, vz, tx, ft, dt, eid));
     }
 
     [Fact]
     public void Decode_TruncatesToReceiverCapacity()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
         for (int i = 0; i < Capacity; i++) px[i] = i;
 
         var buf = new byte[SwarmSnapshot.CalculateBufferSize(Capacity)];
-        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, Capacity);
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, Capacity);
 
         var smallPx = new float[10];
         var smallPz = new float[10];
@@ -128,9 +129,10 @@ public class SwarmSnapshotTest
         var smallTx = new int[10];
         var smallFt = new float[10];
         var smallDt = new float[10];
+        var smallEid = new int[10];
 
         int decoded = SwarmSnapshot.Decode(buf, buf.Length,
-            smallPx, smallPz, smallVx, smallVz, smallTx, smallFt, smallDt);
+            smallPx, smallPz, smallVx, smallVz, smallTx, smallFt, smallDt, smallEid);
         Assert.Equal(10, decoded);
         for (int i = 0; i < 10; i++) Assert.Equal((float)i, smallPx[i]);
     }
@@ -156,24 +158,68 @@ public class SwarmSnapshotTest
     [Fact]
     public void RoundTrip_TypeIndexFitsInByte()
     {
-        var (px, pz, vx, vz, tx, ft, dt) = AllocSoA(Capacity);
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
         tx[0] = 200;
         var buf = new byte[SwarmSnapshot.CalculateBufferSize(1)];
-        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, 1);
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 1);
 
-        var (_, _, _, _, tx2, _, _) = AllocSoA(Capacity);
+        var (_, _, _, _, tx2, _, _, _) = AllocSoA(Capacity);
         var px2 = new float[Capacity];
         var pz2 = new float[Capacity];
         var vx2 = new float[Capacity];
         var vz2 = new float[Capacity];
         var ft2 = new float[Capacity];
         var dt2 = new float[Capacity];
-        SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2);
+        var eid2 = new int[Capacity];
+        SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
 
         Assert.Equal(200, tx2[0]);
     }
 
-    private static (float[] px, float[] pz, float[] vx, float[] vz, int[] tx, float[] ft, float[] dt) AllocSoA(int capacity)
+    [Fact]
+    public void Decode_WrongVersion_ReturnsZero()
+    {
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
+        px[0] = 1.0f;
+        var buf = new byte[SwarmSnapshot.CalculateBufferSize(1)];
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 1);
+
+        buf[0] = (byte)(SwarmSnapshot.Version + 1);
+
+        var (px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2) = AllocSoA(Capacity);
+        int decoded = SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
+        Assert.Equal(0, decoded);
+    }
+
+    [Fact]
+    public void Encode_AlwaysWritesCurrentVersion()
+    {
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
+        var buf = new byte[SwarmSnapshot.CalculateBufferSize(1)];
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 1);
+        Assert.Equal(SwarmSnapshot.Version, buf[0]);
+    }
+
+    [Fact]
+    public void RoundTrip_EntityId_PreservedAcrossEntities()
+    {
+        var (px, pz, vx, vz, tx, ft, dt, eid) = AllocSoA(Capacity);
+        eid[0] = 1;
+        eid[1] = 65535;
+        eid[2] = 12345;
+
+        var buf = new byte[SwarmSnapshot.CalculateBufferSize(3)];
+        SwarmSnapshot.Encode(buf, px, pz, vx, vz, tx, ft, dt, eid, 3);
+
+        var (px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2) = AllocSoA(Capacity);
+        SwarmSnapshot.Decode(buf, buf.Length, px2, pz2, vx2, vz2, tx2, ft2, dt2, eid2);
+
+        Assert.Equal(1, eid2[0]);
+        Assert.Equal(65535, eid2[1]);
+        Assert.Equal(12345, eid2[2]);
+    }
+
+    private static (float[] px, float[] pz, float[] vx, float[] vz, int[] tx, float[] ft, float[] dt, int[] eid) AllocSoA(int capacity)
     {
         return (
             new float[capacity],
@@ -182,7 +228,8 @@ public class SwarmSnapshotTest
             new float[capacity],
             new int[capacity],
             new float[capacity],
-            new float[capacity]
+            new float[capacity],
+            new int[capacity]
         );
     }
 }
