@@ -16,6 +16,7 @@ A sandbox project for learning Godot 4.6 with C#.
 | `04_shaders_in_godot/` | 5 | GDShader, MultiMesh, CompositorEffect |
 | `05_multiplayer_godot/` | 6 | ENet, RPC, Server Authority (optional: Steam) |
 | `06_escape_room_godot/` | 7 | Escape room / walking simulator. Interaction system, Inventory, Puzzle, Trigger + Signal architecture |
+| `07_persistence_in_godot/` | 8 | 2D persistence sandbox. Encrypted save data, ConfigFile settings, version migration, all-in-one UI |
 
 ---
 
@@ -30,6 +31,7 @@ A sandbox project for learning Godot 4.6 with C#.
 | **5** | 3D / Rendering -- GDShader, MultiMesh, CompositorEffect |
 | **6** | Multiplayer -- ENet, Server Authority, Steam |
 | **7** | Escape room -- Interaction system, Trigger + Signal, Inventory, Puzzle, UI |
+| **8** | Persistence -- FileAccess encryption (AES-256-CFB), ConfigFile, save version migration, atomic write |
 
 ---
 
@@ -69,7 +71,9 @@ Sandbox_003/
 │   └── project.godot
 ├── 05_multiplayer_godot/   # Phase 6
 │   └── project.godot
-└── 06_escape_room_godot/   # Phase 7
+├── 06_escape_room_godot/   # Phase 7
+│   └── project.godot
+└── 07_persistence_in_godot/ # Phase 8
     └── project.godot
 ```
 

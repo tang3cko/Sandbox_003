@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Persistence.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Scripts/Persistence/SaveData.cs" Link="SaveData.cs" />
+    <Compile Include="../Scripts/Persistence/Crc32.cs" Link="Crc32.cs" />
+    <Compile Include="../Scripts/Persistence/SaveDataMigrator.cs" Link="SaveDataMigrator.cs" />
+    <Compile Include="../Scripts/Persistence/SaveSerializer.cs" Link="SaveSerializer.cs" />
+    <Compile Include="../Scripts/Inventory/InventoryStack.cs" Link="InventoryStack.cs" />
+    <Compile Include="../Scripts/Inventory/InventoryData.cs" Link="InventoryData.cs" />
+    <Compile Include="../Scripts/Settings/SettingsData.cs" Link="SettingsData.cs" />
+  </ItemGroup>
+</Project>
