@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>VoxelTerrain.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Scripts/Core/MaterialId.cs" Link="MaterialId.cs" />
+    <Compile Include="../Scripts/Core/MaterialPalette.cs" Link="MaterialPalette.cs" />
+    <Compile Include="../Scripts/Core/ChunkData.cs" Link="ChunkData.cs" />
+    <Compile Include="../Scripts/Core/VoxelEdits.cs" Link="VoxelEdits.cs" />
+    <Compile Include="../Scripts/Core/MeshData.cs" Link="MeshData.cs" />
+    <Compile Include="../Scripts/Core/BlockyMeshBuilder.cs" Link="BlockyMeshBuilder.cs" />
+    <Compile Include="../Scripts/Core/IVoxelMesher.cs" Link="IVoxelMesher.cs" />
+    <Compile Include="../Scripts/Core/DensityField.cs" Link="DensityField.cs" />
+    <Compile Include="../Scripts/Core/SdfEdits.cs" Link="SdfEdits.cs" />
+    <Compile Include="../Scripts/Core/MarchingCubesTables.cs" Link="MarchingCubesTables.cs" />
+    <Compile Include="../Scripts/Core/MarchingCubesMesher.cs" Link="MarchingCubesMesher.cs" />
+    <Compile Include="../Scripts/Core/HeightNoise.cs" Link="HeightNoise.cs" />
+    <Compile Include="../Scripts/Core/TerrainPalette.cs" Link="TerrainPalette.cs" />
+  </ItemGroup>
+</Project>
